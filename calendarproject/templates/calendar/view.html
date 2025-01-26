@@ -1,0 +1,150 @@
+{% extends "layouts/index.html" %}
+
+{% block title %}Kalendarz{% endblock %}
+
+{% block head %}
+{{ super() }}
+<!-- Dodanie SweetAlert2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<style>
+    .disabled-event {
+        pointer-events: none; /* Wyłącza możliwość kliknięcia */
+        opacity: 0.5; /* Ułatwia wizualne rozróżnienie */
+        cursor: default; /* Zmienia kursor na domyślny */
+    }
+    /* Stylizacja przycisków w SweetAlert2, opcjonalnie */
+    .swal2-popup {
+        font-size: 1.6rem;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container mx-auto mt-10">
+    <h2 class="text-2xl font-bold mb-5">Kalendarz</h2>
+    <div id='calendar'></div>
+</div>
+
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css' rel='stylesheet' />
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/locales/pl.js'></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    window.calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        slotDuration: '00:30:00',
+        slotMinTime: '08:00:00',
+        slotMaxTime: '20:00:00',
+        locale: 'pl',
+        timeZone: 'Europe/Warsaw',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: '/calendar/get_appointments',
+        eventDidMount: function(info) {
+            var eventStart = info.event.start;
+            var now = new Date();
+            var thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000);
+
+            if (eventStart < thirtyMinutesFromNow) {
+                info.el.classList.add('disabled-event');
+            }
+        },
+        eventClick: function(info) {
+            var eventStart = info.event.start;
+            var now = new Date();
+            var thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000);
+
+            if (eventStart < thirtyMinutesFromNow) {
+                showToast('Nie można dodać terminu w tym czasie.', 'error');
+                return; // Zatrzymuje dalsze przetwarzanie kliknięcia
+            }
+
+            if (info.event.title === 'Dostępny') {
+                Swal.fire({
+                    title: 'Dodaj Termin',
+                    input: 'text',
+                    inputLabel: 'Wprowadź temat wizyty:',
+                    inputPlaceholder: 'Temat...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Dodaj',
+                    cancelButtonText: 'Anuluj',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Musisz wprowadzić temat wizyty!';
+                        }
+                        return null;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var topic = result.value;
+                        fetch('/calendar/book/' + info.event.id, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                topic: topic
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                calendar.refetchEvents(); // Odświeża kalendarz po udanej rezerwacji
+                                showToast('Termin został pomyślnie zarezerwowany.', 'success');
+                            } else {
+                                showToast('Błąd podczas rezerwacji terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Błąd:', error);
+                            showToast('Wystąpił błąd podczas rezerwacji terminu.', 'error');
+                        });
+                    }
+                });
+            } else if (info.event.title.startsWith('Zarezerwowane')) {
+                Swal.fire({
+                    title: 'Anuluj Termin',
+                    text: 'Czy chcesz anulować tę wizytę?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Tak, anuluj',
+                    cancelButtonText: 'Nie, pozostaw',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/calendar/cancel/' + info.event.id, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                calendar.refetchEvents(); // Odświeża kalendarz po udanym anulowaniu
+                                showToast('Termin został pomyślnie anulowany.', 'success');
+                            } else {
+                                showToast('Błąd podczas anulowania terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Błąd:', error);
+                            showToast('Wystąpił błąd podczas anulowania terminu.', 'error');
+                        });
+                    }
+                });
+            }
+        }
+    });
+    calendar.render();
+});
+</script>
+{% endblock %}
