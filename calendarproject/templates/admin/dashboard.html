@@ -97,13 +97,6 @@
                         <li class="py-3">
                             <p class="font-medium">{{ appointment.start_time.strftime('%Y-%m-%d %H:%M') }} -
                                {{ appointment.end_time.strftime('%H:%M') }}</p>
-                            <p class="text-sm text-gray-600">Student:
-                                {% if appointment.student %}
-                                    {{ appointment.student.first_name }} {{ appointment.student.last_name }}
-                                {% else %}
-                                    Nieznany
-                                {% endif %}
-                            </p>
                             <p class="text-sm text-gray-600">Temat: {{ appointment.topic or 'Brak tematu' }}</p>
                         </li>
                     {% endfor %}

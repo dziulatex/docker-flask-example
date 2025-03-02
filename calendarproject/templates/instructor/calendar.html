@@ -319,7 +319,28 @@
 
         // Zmienna do przechowywania wybranej daty
         var selectedDate = null;
+function isEventConfirmed(eventDate) {
+    // Sprawdź czy termin o tej dacie jest już potwierdzony
+    const existingEvents = calendar.getEvents();
+    return existingEvents.some(event => {
+        // Sprawdź czy event ma status confirmed lub przypisanego studenta
+        const isConfirmed = event.extendedProps &&
+                          (event.extendedProps.status === 'confirmed' ||
+                           event.extendedProps.student);
 
+        // Sprawdź czy daty się pokrywają
+        const eventStart = event.start;
+        const eventEnd = event.end;
+
+        const overlap = (
+            (eventDate.start >= eventStart && eventDate.start < eventEnd) ||
+            (eventDate.end > eventStart && eventDate.end <= eventEnd) ||
+            (eventDate.start <= eventStart && eventDate.end >= eventEnd)
+        );
+
+        return isConfirmed && overlap;
+    });
+}
         // Funkcja do pokazywania modalu potwierdzenia
         function showConfirmationModal(info) {
             appointmentToAdd = info;
@@ -355,9 +376,24 @@
         }
 
         // Funkcja do obsługi wyboru daty
-        function handleDateSelection(info) {
-            showConfirmationModal(info);
-        }
+       function handleDateSelection(info) {
+    if (isEventConfirmed(info)) {
+        // Pokaż błąd
+        var errorNotification = document.createElement('div');
+        errorNotification.className = 'notification error';
+        errorNotification.innerHTML = 'Ten termin jest już potwierdzony i nie można go edytować.';
+        document.body.appendChild(errorNotification);
+
+        setTimeout(function() {
+            document.body.removeChild(errorNotification);
+        }, 3000);
+
+        return; // Przerwij operację
+    }
+
+    // Jeśli termin nie jest potwierdzony, kontynuuj normalne działanie
+    showConfirmationModal(info);
+}
 
 function addAppointment(info) {
     // Sprawdź, czy termin się nie nakłada z istniejącymi
@@ -509,46 +545,61 @@ function addAppointment(info) {
             closeConfirmationModal();
         };
 
-        confirmButton.onclick = function() {
-            // Pobierz wybrane godziny
-            var startTime = startTimeSelect.value;
-            var endTime = endTimeSelect.value;
+confirmButton.onclick = function() {
+    // Pobierz wybrane godziny
+    var startTime = startTimeSelect.value;
+    var endTime = endTimeSelect.value;
 
-            // Utwórz obiekty Date z wybraną datą i godzinami
-            var startDateTime = new Date(selectedDate);
-            var [startHours, startMinutes] = startTime.split(':').map(Number);
-            startDateTime.setHours(startHours, startMinutes, 0, 0);
+    // Utwórz obiekty Date z wybraną datą i godzinami
+    var startDateTime = new Date(selectedDate);
+    var [startHours, startMinutes] = startTime.split(':').map(Number);
+    startDateTime.setHours(startHours, startMinutes, 0, 0);
 
-            var endDateTime = new Date(selectedDate);
-            var [endHours, endMinutes] = endTime.split(':').map(Number);
-            endDateTime.setHours(endHours, endMinutes, 0, 0);
+    var endDateTime = new Date(selectedDate);
+    var [endHours, endMinutes] = endTime.split(':').map(Number);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
 
-            // Sprawdź, czy wybrane daty są w przyszłości
-            var now = new Date();
-            var oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+    // Sprawdź, czy wybrane daty są w przyszłości
+    var now = new Date();
+    var oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
-            if (startDateTime < oneHourFromNow) {
-                // Powiadomienie zamiast alert
-                var errorNotification = document.createElement('div');
-                errorNotification.className = 'notification error';
-                errorNotification.innerHTML = 'Termin musi być co najmniej godzinę od teraz.';
-                document.body.appendChild(errorNotification);
+    if (startDateTime < oneHourFromNow) {
+        // Powiadomienie zamiast alert
+        var errorNotification = document.createElement('div');
+        errorNotification.className = 'notification error';
+        errorNotification.innerHTML = 'Termin musi być co najmniej godzinę od teraz.';
+        document.body.appendChild(errorNotification);
 
-                setTimeout(function() {
-                    document.body.removeChild(errorNotification);
-                }, 3000);
-                return;
-            }
+        setTimeout(function() {
+            document.body.removeChild(errorNotification);
+        }, 3000);
+        return;
+    }
 
-            // Dodaj termin - wywołaj funkcję handleDateSelection
-            handleDateSelection({
-                start: startDateTime,
-                end: endDateTime
-            });
+    // Sprawdź, czy termin nie jest już potwierdzony
+    const dateInfo = {
+        start: startDateTime,
+        end: endDateTime
+    };
 
-            // Zamknij modal wyboru czasu
-            closeTimeSelectModal();
-        };
+    if (isEventConfirmed(dateInfo)) {
+        var errorNotification = document.createElement('div');
+        errorNotification.className = 'notification error';
+        errorNotification.innerHTML = 'Ten termin jest już potwierdzony i nie można go edytować.';
+        document.body.appendChild(errorNotification);
+
+        setTimeout(function() {
+            document.body.removeChild(errorNotification);
+        }, 3000);
+        return;
+    }
+
+    // Dodaj termin - wywołaj funkcję handleDateSelection
+    handleDateSelection(dateInfo);
+
+    // Zamknij modal wyboru czasu
+    closeTimeSelectModal();
+};
 
         window.calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'timeGridWeek',
@@ -569,7 +620,6 @@ function addAppointment(info) {
 
                 // Add student name from the event data
                 info.event.extendedProps.student = info.event.extendedProps.student || "";
-
                 // Now pass the event to showAppointmentDetails
                 showAppointmentDetails(info.event);
             },
@@ -604,14 +654,25 @@ function addAppointment(info) {
                     handleDateSelection(info);
                 }
             },
-            eventColor: 'green',
+            eventColor: 'gray',
             eventDidMount: function(info) {
-                // Add student data to the event object
-                if (info.event.extendedProps && info.event.extendedProps.student) {
-                    const studentEl = document.createElement('div');
-                    studentEl.className = 'fc-event-student';
-                    studentEl.innerText = 'Student: ' + info.event.extendedProps.student;
-                    info.el.appendChild(studentEl);
+                if (info.event.extendedProps) {
+                    let color;
+
+                    if (info.event.extendedProps.is_available) {
+                        color = 'green'; // Jeśli available = true → zielony
+                    } else {
+                        switch (info.event.extendedProps.status) {
+                            case 'pending':
+                                color = 'blue'; // Jeśli available = false i status = pending → żółty
+                                break;
+                            case 'confirmed':
+                                color = 'gray'; // Jeśli available = false i status = confirmed → niebieski
+                                break;
+                        }
+                    }
+
+                    info.el.style.backgroundColor = color;
                 }
             }
         });
@@ -623,7 +684,6 @@ function addAppointment(info) {
         // Jeśli funkcja nie istnieje, stwórz pustą funkcję
         if (typeof window.showAppointmentDetails !== 'function') {
             window.showAppointmentDetails = function(event) {
-                console.log("Event details:", event);
 
                 // Stwórz modal zamiast alert
                 var detailsModal = document.createElement('div');
