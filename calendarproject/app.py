@@ -3,7 +3,7 @@ from werkzeug.debug import DebuggedApplication
 from werkzeug.middleware.proxy_fix import ProxyFix
 from celery import Celery
 from celery import Task
-from calendarproject.extensions import db, debug_toolbar, flask_static_digest, init_login_manager,init_mail
+from calendarproject.extensions import db, debug_toolbar, flask_static_digest, init_login_manager, init_mail
 from calendarproject.page.views import page
 from calendarproject.up.views import up
 from calendarproject.auth.views import auth
@@ -39,6 +39,8 @@ def setup_logging(app):
     app.logger.setLevel(logging.INFO)
 
     app.logger.info('CalendarProject startup')
+
+
 def create_celery_app(app=None):
     """
     Create a new Celery app and tie together the Celery config to the app's
@@ -86,7 +88,7 @@ def create_app(settings_override=None):
     setup_logging(app)
     with app.app_context():
         db.create_all()
-        create_instructor_if_not_exists(app)
+        create_admin_if_not_exists(app)
 
     return app
 
@@ -117,26 +119,26 @@ def middleware(app):
     return None
 
 
-def create_instructor_if_not_exists(app):
+def create_admin_if_not_exists(app):
     """
-    Create an instructor account if it doesn't exist.
+    Create an admin account if it doesn't exist.
     """
     with app.app_context():
-        instructor = User.query.filter_by(is_instructor=True).first()
-        if not instructor:
-            new_instructor = User(
-                username="instructor",
-                email="instructor@example.com",
+        admin = User.query.filter_by(is_admin=True).first()
+        if not admin:
+            new_admin = User(
+                username="admin",
+                email="admin@example.com",
                 first_name="Jacek",  # Dodane imię
-                last_name="Jeleń",    # Dodane nazwisko
-                is_instructor=True
+                last_name="Jeleń",  # Dodane nazwisko
+                is_admin=True
             )
-            new_instructor.set_password("password")  # W środowisku produkcyjnym należy użyć bezpieczniejszego hasła
-            db.session.add(new_instructor)
+            new_admin.set_password("password")  # W środowisku produkcyjnym należy użyć bezpieczniejszego hasła
+            db.session.add(new_admin)
             db.session.commit()
-            print("Konto instruktora zostało utworzone.")
+            print("Konto admina zostało utworzone.")
         else:
-            print("Konto instruktora już istnieje.")
+            print("Konto admina już istnieje.")
 
 
 celery_app = create_celery_app()

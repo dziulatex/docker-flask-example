@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request,current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from calendarproject.models.user import User
 from calendarproject.extensions import db
@@ -9,31 +9,31 @@ auth = Blueprint('auth', __name__)
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    current_app.logger.info(f"Login route accessed. Method: {request.method}")
+    current_app.logger.info(f"Dostęp do trasy logowania. Metoda: {request.method}")
 
     if request.method == 'POST':
-        current_app.logger.info("POST request received for login")
-        current_app.logger.debug(f"Form data: {request.form}")
+        current_app.logger.info("Otrzymano żądanie POST dla logowania")
+        current_app.logger.debug(f"Dane formularza: {request.form}")
 
         if form.validate_on_submit():
-            current_app.logger.info(f"Form validated for username: {form.username.data}")
+            current_app.logger.info(f"Formularz zwalidowany dla nazwy użytkownika: {form.username.data}")
             user = User.query.filter_by(username=form.username.data).first()
             if user and user.check_password(form.password.data):
                 login_user(user)
-                current_app.logger.info(f"User {user.username} logged in successfully")
-                flash('Logged in successfully.', 'success')
+                current_app.logger.info(f"Użytkownik {user.username} zalogowany pomyślnie")
+                flash('Zalogowano pomyślnie.', 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page or url_for('page.home'))
             else:
-                current_app.logger.warning(f"Failed login attempt for username: {form.username.data}")
-                flash('Invalid username or password.', 'error')
+                current_app.logger.warning(f"Nieudana próba logowania dla nazwy użytkownika: {form.username.data}")
+                flash('Nieprawidłowa nazwa użytkownika lub hasło.', 'error')
         else:
-            current_app.logger.warning(f"Form validation failed: {form.errors}")
+            current_app.logger.warning(f"Walidacja formularza nie powiodła się: {form.errors}")
             for field, errors in form.errors.items():
                 for error in errors:
                     flash(f"{field.capitalize()}: {error}", 'error')
     else:
-        current_app.logger.info("GET request received for login form")
+        current_app.logger.info("Otrzymano żądanie GET dla formularza logowania")
 
     return render_template('auth/login.html', form=form)
 
@@ -98,5 +98,5 @@ def register():
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out.', 'info')
+    flash('Zostałeś wylogowany.', 'info')
     return redirect(url_for('page.home'))

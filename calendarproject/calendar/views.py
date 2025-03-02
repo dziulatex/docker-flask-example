@@ -18,8 +18,8 @@ calendar = Blueprint('calendar', __name__)
 @calendar.route('/view')
 @login_required
 def view():
-    if current_user.is_instructor:
-        flash('Access denied. You must be an instructor to view this page.', 'error')
+    if current_user.is_instructor and current_user.is_admin:
+        flash('Odmowa dostępu. Musisz być studentem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
     return render_template('calendar/view.html')
 
@@ -27,8 +27,8 @@ def view():
 @calendar.route('/calendar/get_appointments')
 @login_required
 def get_appointments():
-    if current_user.is_instructor:
-        flash('Odmowa dostępu. Musisz być instruktorem, aby zobaczyć tę stronę.', 'error')
+    if current_user.is_instructor and current_user.is_admin:
+        flash('Odmowa dostępu. Musisz być studentem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
 
     # Pobierz parametry zapytania
@@ -103,8 +103,8 @@ def get_appointments():
 @calendar.route('/calendar/book/<int:appointment_id>', methods=['POST'])
 @login_required
 def book(appointment_id):
-    if current_user.is_instructor:
-        flash('Odmowa dostępu. Nie możesz być instruktorem, aby zobaczyć tę stronę.', 'error')
+    if current_user.is_instructor and current_user.is_admin:
+        flash('Odmowa dostępu. Musisz być studentem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
 
     appointment = Appointment.query.get_or_404(appointment_id)
@@ -133,7 +133,7 @@ def book(appointment_id):
         notify_instructor_new_appointment(appointment.instructor, appointment)
         notification = Notification(
             user_id=appointment.instructor_id,
-            message=f'Nowa wizyta do zaakceptowania na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} od {current_user.first_name + ' ' + current_user.last_name}.',
+            message=f'Nowa wizyta do zaakceptowania na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} od {current_user.first_name + " " + current_user.last_name}.',
             type='appointment',
             related_id=appointment.id
         )
@@ -151,8 +151,8 @@ def book(appointment_id):
 @calendar.route('/cancel/<int:appointment_id>', methods=['POST'])
 @login_required
 def cancel(appointment_id):
-    if current_user.is_instructor:
-        flash('Odmowa dostępu. Nie mozesz być instruktorem, aby zobaczyć tę stronę.', 'error')
+    if current_user.is_instructor and current_user.is_admin:
+        flash('Odmowa dostępu. Nie możesz być instruktorem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
 
     appointment = Appointment.query.get_or_404(appointment_id)
@@ -174,7 +174,7 @@ def cancel(appointment_id):
         appointment.topic = None
         notification = Notification(
             user_id=appointment.instructor_id,
-            message=f'Wizyta na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} została anulowana przez studenta {current_user.first_name +' '+ current_user.last_name}.',
+            message=f'Wizyta na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} została anulowana przez studenta {current_user.first_name + " " + current_user.last_name}.',
             type="appointment",
             related_id=appointment.id
         )

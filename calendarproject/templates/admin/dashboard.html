@@ -3,19 +3,96 @@
 {% block title %}Panel Administratora{% endblock %}
 
 {% block body %}
-<div class="container mx-auto mt-10">
+<div class="container mx-auto mt-10 px-4">
     <h2 class="text-2xl font-bold mb-5">Panel Administratora</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Instructors Section -->
+    <div class="bg-white shadow-md rounded p-6 mb-8">
+        <h3 class="text-xl font-semibold mb-4">Zarządzanie Instruktorami</h3>
+
+        <!-- Form to add new instructor -->
+        <div class="mb-6">
+            <h4 class="text-lg font-medium mb-3">Dodaj Nowego Instruktora</h4>
+            <form method="POST" action="{{ url_for('admin.create_instructor') }}" class="bg-gray-50 p-4 rounded">
+                {{ form.hidden_tag() }}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        {{ form.first_name.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                        {{ form.first_name(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    </div>
+                    <div>
+                        {{ form.last_name.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                        {{ form.last_name(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    </div>
+                    <div>
+                        {{ form.username.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                        {{ form.username(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    </div>
+                    <div>
+                        {{ form.email.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                        {{ form.email(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    </div>
+                    <div class="md:col-span-2">
+                        {{ form.password.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                        {{ form.password(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline") }}
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                        Dodaj Instruktora
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- List of existing instructors -->
         <div>
+            <h4 class="text-lg font-medium mb-3">Lista Instruktorów</h4>
+            {% if instructors %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="py-2 px-4 border-b text-left">Imię i Nazwisko</th>
+                                <th class="py-2 px-4 border-b text-left">Nazwa użytkownika</th>
+                                <th class="py-2 px-4 border-b text-left">Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for instructor in instructors %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-2 px-4 border-b">{{ instructor.first_name }} {{ instructor.last_name }}</td>
+                                    <td class="py-2 px-4 border-b">{{ instructor.username }}</td>
+                                    <td class="py-2 px-4 border-b">{{ instructor.email }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600">Brak zarejestrowanych instruktorów.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Appointments Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white shadow-md rounded p-6">
             <h3 class="text-xl font-semibold mb-3">Zarezerwowane Wizyty</h3>
             {% if booked_appointments %}
-                <ul class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <ul class="divide-y divide-gray-200">
                     {% for appointment in booked_appointments %}
-                        <li class="mb-2">
-                            {{ appointment.start_time.strftime('%Y-%m-%d %H:%M') }} -
-                            {{ appointment.end_time.strftime('%H:%M') }} z
-                            {{ appointment.student.username }}
+                        <li class="py-3">
+                            <p class="font-medium">{{ appointment.start_time.strftime('%Y-%m-%d %H:%M') }} -
+                               {{ appointment.end_time.strftime('%H:%M') }}</p>
+                            <p class="text-sm text-gray-600">Student:
+                                {% if appointment.student %}
+                                    {{ appointment.student.first_name }} {{ appointment.student.last_name }}
+                                {% else %}
+                                    Nieznany
+                                {% endif %}
+                            </p>
+                            <p class="text-sm text-gray-600">Temat: {{ appointment.topic or 'Brak tematu' }}</p>
                         </li>
                     {% endfor %}
                 </ul>
@@ -24,12 +101,12 @@
             {% endif %}
         </div>
 
-        <div>
+        <div class="bg-white shadow-md rounded p-6">
             <h3 class="text-xl font-semibold mb-3">Dostępne Wizyty</h3>
             {% if available_appointments %}
-                <ul class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <ul class="divide-y divide-gray-200">
                     {% for appointment in available_appointments %}
-                        <li class="mb-2">
+                        <li class="py-3">
                             {{ appointment.start_time.strftime('%Y-%m-%d %H:%M') }} -
                             {{ appointment.end_time.strftime('%H:%M') }}
                         </li>
