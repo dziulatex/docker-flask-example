@@ -16,6 +16,7 @@ from calendarproject.models.notification import Notification
 
 instructor = Blueprint('instructor', __name__)
 
+
 @instructor.route('/instructor/calendar')
 @login_required
 def calendar():
@@ -23,6 +24,7 @@ def calendar():
         flash('Dostęp zabroniony. Musisz być instruktorem, aby wyświetlić tę stronę.', 'error')
         return redirect(url_for('page.home'))
     return render_template('instructor/calendar.html')
+
 
 @instructor.route('/instructor/get_appointments', methods=['GET'])
 @login_required
@@ -76,9 +78,11 @@ def get_appointments():
                 'id': appointment.id,
                 'title': 'Dostępny' if appointment.is_available else f'Temat konsultacji: {appointment.topic}',
                 'student': student_name,
+                'is_available': appointment.is_available,
                 'start': appointment.start_time.isoformat(),
                 'end': appointment.end_time.isoformat(),
-                'color': 'green' if appointment.is_available else 'blue'
+                'color': 'green' if appointment.is_available else 'blue',
+                'status': appointment.status
             })
 
         return jsonify(events)
@@ -86,6 +90,7 @@ def get_appointments():
     except Exception as e:
         print(f"Błąd w get_appointments: {e}")
         return jsonify({'status': 'error', 'message': 'Nieprawidłowe żądanie'}), 400
+
 
 @instructor.route('/instructor/add_appointment', methods=['POST'])
 @login_required
@@ -100,14 +105,16 @@ def add_appointment():
 
         # Upewnij się, że daty zawierają informację o strefie czasowej
         if start_time.tzinfo is None or end_time.tzinfo is None:
-            return jsonify({'status': 'error', 'message': 'Nieprawidłowy format daty. Brak informacji o strefie czasowej.'}), 400
+            return jsonify(
+                {'status': 'error', 'message': 'Nieprawidłowy format daty. Brak informacji o strefie czasowej.'}), 400
 
         # Oblicz aktualny czas w tej samej strefie czasowej co start_time
         now = datetime.now(timezone.utc).astimezone(start_time.tzinfo)
 
         # Sprawdź czy start_time jest co najmniej godzinę w przyszłości
         if start_time < now + timedelta(hours=1):
-            return jsonify({'status': 'error', 'message': 'Termin musi być co najmniej godzinę do przodu od obecnego czasu.'}), 400
+            return jsonify(
+                {'status': 'error', 'message': 'Termin musi być co najmniej godzinę do przodu od obecnego czasu.'}), 400
 
         # Sprawdź czy end_time jest po start_time
         if end_time <= start_time:
@@ -124,7 +131,8 @@ def add_appointment():
             ).first()
 
             if existing_appointments:
-                return jsonify({'status': 'error', 'message': 'Nie można dodać całodniowego terminu, ponieważ istnieją już terminy w tym dniu.'}), 400
+                return jsonify({'status': 'error',
+                                'message': 'Nie można dodać całodniowego terminu, ponieważ istnieją już terminy w tym dniu.'}), 400
 
         new_appointment = Appointment(
             instructor_id=current_user.id,
@@ -139,12 +147,13 @@ def add_appointment():
     except json.JSONDecodeError:
         return jsonify({'status': 'error', 'message': 'Nieprawidłowe dane JSON.'}), 400
     except KeyError as e:
-        return jsonify({'status': 'error', 'message': f'Brakujący klucz: {e.args[0]}' }), 400
+        return jsonify({'status': 'error', 'message': f'Brakujący klucz: {e.args[0]}'}), 400
     except ValueError as e:
         return jsonify({'status': 'error', 'message': f'Nieprawidłowy format daty: {str(e)}'}), 400
     except Exception as e:
         # Zaloguj wyjątek jeśli to konieczne
         return jsonify({'status': 'error', 'message': 'Wystąpił nieoczekiwany błąd.'}), 500
+
 
 @instructor.route('/instructor/delete_appointment', methods=['POST'])
 @login_required
@@ -160,6 +169,7 @@ def delete_appointment():
         return jsonify({'status': 'success'})
     return jsonify({'status': 'error', 'message': 'Termin nie został znaleziony lub nie jest dostępny'}), 404
 
+
 @instructor.route('/instructor/confirm_appointment/<int:appointment_id>', methods=['POST'])
 @login_required
 def confirm_appointment(appointment_id):
@@ -169,12 +179,40 @@ def confirm_appointment(appointment_id):
     appointment = Appointment.query.get_or_404(appointment_id)
     if appointment.instructor_id != current_user.id:
         return jsonify({'status': 'error', 'message': 'Brak autoryzacji'}), 403
-
+    if appointment.status != 'pending':
+        return jsonify({'status': 'error', 'message': 'Wizyta została już zaakceptowana'}), 403
     appointment.status = 'confirmed'
     db.session.commit()
     notification = Notification(
         user_id=appointment.student_id,
         message=f'Twoja wizyta na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} została zaakceptowana.',
+        type="appointment",
+        related_id=appointment.id
+    )
+    db.session.add(notification)
+    db.session.commit()
+    return jsonify({'status': 'success'})
+
+
+@instructor.route('/instructor/cancel_appointment/<int:appointment_id>', methods=['POST'])
+@login_required
+def cancel_appointment(appointment_id):
+    if not current_user.is_instructor:
+        return jsonify({'status': 'error', 'message': 'Brak autoryzacji'}), 403
+
+    appointment = Appointment.query.get_or_404(appointment_id)
+    if appointment.instructor_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Brak autoryzacji'}), 403
+    if appointment.status != 'confirmed':
+        return jsonify({'status': 'error', 'message': 'Wizyta została już zcancelowana'}), 403
+    appointment.status = 'pending'
+    appointment.student = None
+    appointment.topic = None;
+    appointment.is_available = True;
+    db.session.commit()
+    notification = Notification(
+        user_id=appointment.student_id,
+        message=f'Twoja wizyta na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} została anulowana.',
         type="appointment",
         related_id=appointment.id
     )

@@ -44,7 +44,7 @@ def get_notification_details(notification_id):
                 'id': appointment.id,
                 'start': appointment.start_time.isoformat(),
                 'end': appointment.end_time.isoformat(),
-                'title':'Temat konsultacji: '+str(appointment.topic),
+                'title': 'Temat konsultacji: ' + str(appointment.topic),
                 'extendedProps': {
                     'student': f"{appointment.student.first_name} {appointment.student.last_name}",
                     'status': appointment.status

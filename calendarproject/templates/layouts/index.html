@@ -85,6 +85,10 @@
             </button>
             <button id="rejectBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Odrzuć
             </button>
+            <button id="cancelBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2"
+                    style="display:none">
+                Anuluj
+            </button>
         </div>
     </div>
 </div>
@@ -119,55 +123,72 @@
       }).showToast();
     }
 
-    window.showAppointmentDetails = function(event) {
-      window.modal = document.getElementById('appointmentModal');
-      document.getElementById("modalTitle").innerText = event.title;
+window.showAppointmentDetails = function(event) {
+    window.modal = document.getElementById('appointmentModal');
+    document.getElementById("modalTitle").innerText = event.title;
 
-      // Sprawdzenie, czy wydarzenie trwa dokładnie 24 godziny
-      const isAllDay = (event.end - event.start) === 24 * 60 * 60 * 1000; // 24 godziny w milisekundach
+    // Sprawdzenie, czy wydarzenie trwa dokładnie 24 godziny
+    const isAllDay = (event.end - event.start) === 24 * 60 * 60 * 1000; // 24 godziny w milisekundach
 
-      if (isAllDay) {
-          const formattedDate = event.start.toLocaleDateString('pl-PL', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-          });
-          document.getElementById("modalTime").innerText = `Czas: cały dzień - ${formattedDate}`;
-      } else {
-          const startTime = event.start.toLocaleString('pl-PL', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-          });
-          const endTime = event.end.toLocaleString('pl-PL', {
-              hour: '2-digit',
-              minute: '2-digit'
-          });
-          document.getElementById("modalTime").innerText = `Czas: ${startTime} - ${endTime}`;
-      }
-
-      if (event.extendedProps.student) {
-          document.getElementById("modalStudent").innerText = `Student: ${event.extendedProps.student}`;
-          document.getElementById("modalActions").style.display = "block";
-      } else {
-          document.getElementById("modalStudent").innerText = "";
-          document.getElementById("modalActions").style.display = "none";
-      }
-
-      document.getElementById("acceptBtn").onclick = function() {
-          handleAppointmentAction(event.id, 'confirm');
-      }
-
-      document.getElementById("rejectBtn").onclick = function() {
-          handleAppointmentAction(event.id, 'reject');
-      }
-
-      modal.style.display = "block";
+    if (isAllDay) {
+        const formattedDate = event.start.toLocaleDateString('pl-PL', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById("modalTime").innerText = `Czas: cały dzień - ${formattedDate}`;
+    } else {
+        const startTime = event.start.toLocaleString('pl-PL', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const endTime = event.end.toLocaleString('pl-PL', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById("modalTime").innerText = `Czas: ${startTime} - ${endTime}`;
     }
+
+    if (event.extendedProps.student) {
+        document.getElementById("modalStudent").innerText = `Student: ${event.extendedProps.student}`;
+        document.getElementById("modalActions").style.display = "block";
+    } else {
+        document.getElementById("modalStudent").innerText = "";
+        document.getElementById("modalActions").style.display = "none";
+    }
+
+    // Sprawdzenie statusu wydarzenia
+    const isConfirmed = event.extendedProps.status === 'confirmed';
+
+    // Pobranie przycisków
+    const acceptBtn = document.getElementById("acceptBtn");
+    const rejectBtn = document.getElementById("rejectBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    // Ukrywanie lub pokazywanie przycisków
+    acceptBtn.style.display = isConfirmed ? "none" : "inline-block";
+    rejectBtn.style.display = isConfirmed ? "none" : "inline-block";
+    cancelBtn.style.display = isConfirmed ? "inline-block": "none";
+    // Przypisanie akcji do przycisków, jeśli są widoczne
+    if (!isConfirmed) {
+        acceptBtn.onclick = function() {
+            handleAppointmentAction(event.id, 'confirm');
+        };
+
+        rejectBtn.onclick = function() {
+            handleAppointmentAction(event.id, 'reject');
+        };
+    }
+    cancelBtn.onclick = function() {
+            handleAppointmentAction(event.id, 'cancel');
+        };
+    modal.style.display = "block";
+};
+
 
     window.handleAppointmentAction = function(appointmentId, action) {
       fetch(`/instructor/${action}_appointment/${appointmentId}`, {
@@ -181,7 +202,8 @@
           if (data.status === 'success') {
               calendar.refetchEvents();
               modal.style.display = "none";
-              showToast(`Spotkanie zostało ${action === 'confirm' ? 'zaakceptowane' : 'odrzucone'}.`, "success");
+              showToast(`Spotkanie zostało ${action === 'confirm' ? 'zaakceptowane' : action === 'cancel' ? 'anulowane' : 'odrzucone'}.`, "success");
+
 
               // Znalezienie powiązanej notyfikacji
               const notificationElement = document.querySelector(`[data-notification-type="appointment"][data-related-id="${appointmentId}"]`);
@@ -202,12 +224,12 @@
                       });
               }
           } else {
-              showToast('Wystąpił błąd podczas przetwarzania żądania.', "error");
+              showToast(data.message, "error");
           }
       })
       .catch(error => {
           console.error('Error:', error);
-          showToast('Wystąpił błąd podczas przetwarzania żądania.', "error");
+          showToast(data.message, "error");
       });
     }
 
