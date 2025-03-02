@@ -20,7 +20,7 @@ instructor = Blueprint('instructor', __name__)
 @login_required
 def calendar():
     if not current_user.is_instructor:
-        flash('Access denied. You must be an instructor to view this page.', 'error')
+        flash('Dostęp zabroniony. Musisz być instruktorem, aby wyświetlić tę stronę.', 'error')
         return redirect(url_for('page.home'))
     return render_template('instructor/calendar.html')
 
@@ -40,7 +40,7 @@ def get_appointments():
         try:
             tz = pytz.timezone(tz_str)
         except pytz.UnknownTimeZoneError:
-            return jsonify({'status': 'error', 'message': 'Unknown timezone'}), 400
+            return jsonify({'status': 'error', 'message': 'Nieznana strefa czasowa'}), 400
 
         # Parsowanie start i end
         start = parser.isoparse(start_str)
@@ -84,40 +84,40 @@ def get_appointments():
         return jsonify(events)
 
     except Exception as e:
-        print(f"Error in get_appointments: {e}")
-        return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
+        print(f"Błąd w get_appointments: {e}")
+        return jsonify({'status': 'error', 'message': 'Nieprawidłowe żądanie'}), 400
 
 @instructor.route('/instructor/add_appointment', methods=['POST'])
 @login_required
 def add_appointment():
     if not current_user.is_instructor:
-        return jsonify({'status': 'error', 'message': 'Access denied'}), 403
+        return jsonify({'status': 'error', 'message': 'Odmowa dostępu'}), 403
 
     try:
         data = json.loads(request.data)
         start_time = datetime.fromisoformat(data['start'])
         end_time = datetime.fromisoformat(data['end'])
 
-        # Ensure dates are timezone aware
+        # Upewnij się, że daty zawierają informację o strefie czasowej
         if start_time.tzinfo is None or end_time.tzinfo is None:
-            return jsonify({'status': 'error', 'message': 'Invalid datetime format. Timezone information is missing.'}), 400
+            return jsonify({'status': 'error', 'message': 'Nieprawidłowy format daty. Brak informacji o strefie czasowej.'}), 400
 
-        # Calculate current time in the same timezone as start_time
+        # Oblicz aktualny czas w tej samej strefie czasowej co start_time
         now = datetime.now(timezone.utc).astimezone(start_time.tzinfo)
 
-        # Check if start_time is at least one hour in the future
+        # Sprawdź czy start_time jest co najmniej godzinę w przyszłości
         if start_time < now + timedelta(hours=1):
             return jsonify({'status': 'error', 'message': 'Termin musi być co najmniej godzinę do przodu od obecnego czasu.'}), 400
 
-        # Check if end_time is after start_time
+        # Sprawdź czy end_time jest po start_time
         if end_time <= start_time:
             return jsonify({'status': 'error', 'message': 'Czas zakończenia musi być po czasie rozpoczęcia.'}), 400
 
-        # Check if it's a full-day appointment
+        # Sprawdź czy to termin całodniowy
         is_full_day = start_time.time() == time(0, 0) and end_time.time() == time(23, 59, 59)
 
         if is_full_day:
-            # Check if there are any existing appointments for this day
+            # Sprawdź, czy istnieją już terminy na ten dzień
             existing_appointments = Appointment.query.filter(
                 Appointment.instructor_id == current_user.id,
                 func.date(Appointment.start_time) == start_time.date()
@@ -137,20 +137,20 @@ def add_appointment():
         return jsonify({'status': 'success', 'id': new_appointment.id}), 201
 
     except json.JSONDecodeError:
-        return jsonify({'status': 'error', 'message': 'Invalid JSON data.'}), 400
+        return jsonify({'status': 'error', 'message': 'Nieprawidłowe dane JSON.'}), 400
     except KeyError as e:
-        return jsonify({'status': 'error', 'message': f'Missing key: {e.args[0]}' }), 400
+        return jsonify({'status': 'error', 'message': f'Brakujący klucz: {e.args[0]}' }), 400
     except ValueError as e:
-        return jsonify({'status': 'error', 'message': f'Invalid datetime format: {str(e)}'}), 400
+        return jsonify({'status': 'error', 'message': f'Nieprawidłowy format daty: {str(e)}'}), 400
     except Exception as e:
-        # Log the exception if necessary
-        return jsonify({'status': 'error', 'message': 'An unexpected error occurred.'}), 500
+        # Zaloguj wyjątek jeśli to konieczne
+        return jsonify({'status': 'error', 'message': 'Wystąpił nieoczekiwany błąd.'}), 500
 
 @instructor.route('/instructor/delete_appointment', methods=['POST'])
 @login_required
 def delete_appointment():
     if not current_user.is_instructor:
-        return jsonify({'status': 'error', 'message': 'Access denied'}), 403
+        return jsonify({'status': 'error', 'message': 'Odmowa dostępu'}), 403
     data = json.loads(request.data)
     appointment_id = data['id']
     appointment = Appointment.query.get(appointment_id)
@@ -158,17 +158,17 @@ def delete_appointment():
         db.session.delete(appointment)
         db.session.commit()
         return jsonify({'status': 'success'})
-    return jsonify({'status': 'error', 'message': 'Appointment not found or not available'}), 404
+    return jsonify({'status': 'error', 'message': 'Termin nie został znaleziony lub nie jest dostępny'}), 404
 
 @instructor.route('/instructor/confirm_appointment/<int:appointment_id>', methods=['POST'])
 @login_required
 def confirm_appointment(appointment_id):
     if not current_user.is_instructor:
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        return jsonify({'status': 'error', 'message': 'Brak autoryzacji'}), 403
 
     appointment = Appointment.query.get_or_404(appointment_id)
     if appointment.instructor_id != current_user.id:
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        return jsonify({'status': 'error', 'message': 'Brak autoryzacji'}), 403
 
     appointment.status = 'confirmed'
     db.session.commit()
@@ -186,11 +186,11 @@ def confirm_appointment(appointment_id):
 @login_required
 def reject_appointment(appointment_id):
     if not current_user.is_instructor:
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        return jsonify({'status': 'error', 'message': 'Brak autoryzacji'}), 403
 
     appointment = Appointment.query.get_or_404(appointment_id)
     if appointment.instructor_id != current_user.id:
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        return jsonify({'status': 'error', 'message': 'Brak autoryzacji'}), 403
     # Tworzenie notyfikacji dla studenta
     notification = Notification(
         user_id=appointment.student_id,
