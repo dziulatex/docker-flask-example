@@ -359,68 +359,100 @@
             showConfirmationModal(info);
         }
 
-        // Funkcja do dodawania terminu do bazy
-        function addAppointment(info) {
-            fetch('/instructor/add_appointment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    start: info.start.toISOString(),
-                    end: info.end.toISOString()
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    calendar.refetchEvents();
-                    if (typeof showToast === 'function') {
-                        showToast('Termin został pomyślnie dodany.', 'success');
-                    } else {
-                        // Własne powiadomienie o sukcesie
-                        var successNotification = document.createElement('div');
-                        successNotification.className = 'notification success';
-                        successNotification.innerHTML = 'Termin został pomyślnie dodany.';
-                        document.body.appendChild(successNotification);
+function addAppointment(info) {
+    // Sprawdź, czy termin się nie nakłada z istniejącymi
+    const existingEvents = calendar.getEvents();
+    const newEventStart = info.start;
+    const newEventEnd = info.end;
 
-                        setTimeout(function() {
-                            document.body.removeChild(successNotification);
-                        }, 3000);
-                    }
-                } else {
-                    if (typeof showToast === 'function') {
-                        showToast('Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
-                    } else {
-                        // Własne powiadomienie o błędzie
-                        var errorNotification = document.createElement('div');
-                        errorNotification.className = 'notification error';
-                        errorNotification.innerHTML = 'Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.');
-                        document.body.appendChild(errorNotification);
+    // Sprawdź nakładanie się terminów
+    const overlappingEvent = existingEvents.find(event => {
+        const eventStart = event.start;
+        const eventEnd = event.end;
 
-                        setTimeout(function() {
-                            document.body.removeChild(errorNotification);
-                        }, 3000);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (typeof showToast === 'function') {
-                    showToast('Wystąpił błąd podczas dodawania terminu.', 'error');
-                } else {
-                    // Własne powiadomienie o błędzie
-                    var errorNotification = document.createElement('div');
-                    errorNotification.className = 'notification error';
-                    errorNotification.innerHTML = 'Wystąpił błąd podczas dodawania terminu.';
-                    document.body.appendChild(errorNotification);
+        // Sprawdź, czy nowy termin nakłada się z istniejącym
+        return (
+            (newEventStart >= eventStart && newEventStart < eventEnd) || // Początek nowego terminu jest w trakcie istniejącego
+            (newEventEnd > eventStart && newEventEnd <= eventEnd) || // Koniec nowego terminu jest w trakcie istniejącego
+            (newEventStart <= eventStart && newEventEnd >= eventEnd) // Nowy termin zawiera istniejący
+        );
+    });
 
-                    setTimeout(function() {
-                        document.body.removeChild(errorNotification);
-                    }, 3000);
-                }
-            });
+    if (overlappingEvent) {
+        // Pokazujemy powiadomienie o błędzie
+        var errorNotification = document.createElement('div');
+        errorNotification.className = 'notification error';
+        errorNotification.innerHTML = 'Ten termin nakłada się z istniejącym terminem.';
+        document.body.appendChild(errorNotification);
+
+        setTimeout(function() {
+            document.body.removeChild(errorNotification);
+        }, 3000);
+
+        return;
+    }
+
+    // Jeśli wszystko OK, dodaj termin
+    fetch('/instructor/add_appointment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            start: info.start.toISOString(),
+            end: info.end.toISOString()
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            calendar.refetchEvents();
+            if (typeof showToast === 'function') {
+                showToast('Termin został pomyślnie dodany.', 'success');
+            } else {
+                // Własne powiadomienie o sukcesie
+                var successNotification = document.createElement('div');
+                successNotification.className = 'notification success';
+                successNotification.innerHTML = 'Termin został pomyślnie dodany.';
+                document.body.appendChild(successNotification);
+
+                setTimeout(function() {
+                    document.body.removeChild(successNotification);
+                }, 3000);
+            }
+        } else {
+            if (typeof showToast === 'function') {
+                showToast('Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
+            } else {
+                // Własne powiadomienie o błędzie
+                var errorNotification = document.createElement('div');
+                errorNotification.className = 'notification error';
+                errorNotification.innerHTML = 'Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.');
+                document.body.appendChild(errorNotification);
+
+                setTimeout(function() {
+                    document.body.removeChild(errorNotification);
+                }, 3000);
+            }
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Wystąpił błąd podczas dodawania terminu.', 'error');
+        } else {
+            // Własne powiadomienie o błędzie
+            var errorNotification = document.createElement('div');
+            errorNotification.className = 'notification error';
+            errorNotification.innerHTML = 'Wystąpił błąd podczas dodawania terminu.';
+            document.body.appendChild(errorNotification);
+
+            setTimeout(function() {
+                document.body.removeChild(errorNotification);
+            }, 3000);
+        }
+    });
+}
 
         // Funkcja do pokazywania modalu wyboru czasu
         function showTimeSelectModal(date) {
