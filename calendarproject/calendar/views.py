@@ -18,7 +18,7 @@ calendar = Blueprint('calendar', __name__)
 @calendar.route('/view')
 @login_required
 def view():
-    if current_user.is_instructor and current_user.is_admin:
+    if current_user.is_instructor or current_user.is_admin:
         flash('Odmowa dostępu. Musisz być studentem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
     return render_template('calendar/view.html')
@@ -27,7 +27,7 @@ def view():
 @calendar.route('/calendar/get_appointments')
 @login_required
 def get_appointments():
-    if current_user.is_instructor and current_user.is_admin:
+    if current_user.is_instructor or current_user.is_admin:
         flash('Odmowa dostępu. Musisz być studentem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
 
@@ -103,7 +103,7 @@ def get_appointments():
 @calendar.route('/calendar/book/<int:appointment_id>', methods=['POST'])
 @login_required
 def book(appointment_id):
-    if current_user.is_instructor and current_user.is_admin:
+    if current_user.is_instructor or current_user.is_admin:
         flash('Odmowa dostępu. Musisz być studentem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
 
@@ -151,7 +151,7 @@ def book(appointment_id):
 @calendar.route('/cancel/<int:appointment_id>', methods=['POST'])
 @login_required
 def cancel(appointment_id):
-    if current_user.is_instructor and current_user.is_admin:
+    if current_user.is_instructor or current_user.is_admin:
         flash('Odmowa dostępu. Nie możesz być instruktorem, aby zobaczyć tę stronę.', 'error')
         return redirect(url_for('page.home'))
 
