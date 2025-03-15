@@ -38,6 +38,11 @@ def get_notification_details(notification_id):
 
     appointment = Appointment.query.get(notification.related_id)
     if appointment:
+        # Bezpieczne pobieranie danych studenta
+        student_info = ""
+        if appointment.student:
+            student_info = f"{appointment.student.first_name} {appointment.student.last_name}"
+
         response = {
             'status': 'success',
             'appointment': {
@@ -46,7 +51,7 @@ def get_notification_details(notification_id):
                 'end': appointment.end_time.isoformat(),
                 'title': 'Temat konsultacji: ' + str(appointment.topic),
                 'extendedProps': {
-                    'student': f"{appointment.student.first_name} {appointment.student.last_name}",
+                    'student': student_info,
                     'status': appointment.status
                 }
             }

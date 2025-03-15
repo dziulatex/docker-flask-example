@@ -32,6 +32,16 @@
 <nav class="bg-gray-800 p-4">
     <div class="container mx-auto flex justify-between items-center">
         <a href="{{ url_for('page.home') }}" class="text-white font-bold">Aplikacja - Kalendarz</a>
+        {% if current_user.is_authenticated %}
+        <div class="ml-4 px-3 py-1 rounded-full text-sm font-semibold text-white
+                    {% if current_user.is_admin %}bg-red-600
+                    {% elif current_user.is_instructor %}bg-blue-600
+                    {% else %}bg-green-600{% endif %}">
+            {% if current_user.is_admin %}Admin
+            {% elif current_user.is_instructor %}Instruktor
+            {% else %}Użytkownik{% endif %}
+        </div>
+        {% endif %}
         <div class="flex items-center">
             {% if current_user.is_authenticated %}
             {% if current_user.is_instructor %}
