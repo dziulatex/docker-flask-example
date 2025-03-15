@@ -108,7 +108,8 @@ def get_appointments():
             student_name = f"{appointment.student.first_name} {appointment.student.last_name}" if appointment.student else ""
             events.append({
                 'id': appointment.id,
-                'title': 'Dostępny' if appointment.is_available else f'Temat konsultacji: {appointment.topic}',
+                'titleMessage': 'Dostępny' if appointment.is_available else f'Temat konsultacji: {appointment.topic}',
+                'title': '',
                 'student': student_name,
                 'is_available': appointment.is_available,
                 'start': appointment.start_time.isoformat(),
@@ -272,7 +273,6 @@ def confirm_appointment(appointment_id):
     except Exception as e:
         current_app.logger.error(f"Wystąpił błąd podczas potwierdzania terminu: {str(e)}", exc_info=True)
         return jsonify({'status': 'error', 'message': 'Wystąpił błąd podczas potwierdzania terminu.'}), 500
-
 
 
 @instructor.route('/instructor/cancel_appointment/<int:appointment_id>', methods=['POST'])

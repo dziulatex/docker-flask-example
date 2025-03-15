@@ -8,7 +8,6 @@
 {% endblock %}
 
 {% block body %}
-<!-- Przeniesienie stylów do body -->
 <style>
     html, body {
         height: 100%;
@@ -81,7 +80,13 @@
         overflow: auto;
         background-color: rgba(0,0,0,0.4);
     }
-
+    .event-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+        display: inline-block;
+    }
     .custom-modal .modal-content {
         background-color: #fefefe;
         margin: 15% auto;
@@ -210,79 +215,6 @@
 </div>
 
 <!-- Modal do wyboru godzin -->
-<div id="timeSelectModal" class="custom-modal">
-    <div class="modal-content">
-        <h2 class="modal-title text-xl">Wybierz godziny spotkania</h2>
-        <p id="selectedDate" class="mb-3"></p>
-
-        <div class="time-selector">
-            <label for="startTime" class="block mb-2 font-medium">Godzina rozpoczęcia:</label>
-            <select id="startTime"
-                    class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300 focus:border-green-500 outline-none">
-                <option value="08:00">08:00</option>
-                <option value="08:30">08:30</option>
-                <option value="09:00">09:00</option>
-                <option value="09:30">09:30</option>
-                <option value="10:00">10:00</option>
-                <option value="10:30">10:30</option>
-                <option value="11:00">11:00</option>
-                <option value="11:30">11:30</option>
-                <option value="12:00">12:00</option>
-                <option value="12:30">12:30</option>
-                <option value="13:00">13:00</option>
-                <option value="13:30">13:30</option>
-                <option value="14:00">14:00</option>
-                <option value="14:30">14:30</option>
-                <option value="15:00">15:00</option>
-                <option value="15:30">15:30</option>
-                <option value="16:00">16:00</option>
-                <option value="16:30">16:30</option>
-                <option value="17:00">17:00</option>
-                <option value="17:30">17:30</option>
-                <option value="18:00">18:00</option>
-                <option value="18:30">18:30</option>
-                <option value="19:00">19:00</option>
-                <option value="19:30">19:30</option>
-            </select>
-        </div>
-
-        <div class="time-selector">
-            <label for="endTime" class="block mb-2 font-medium">Godzina zakończenia:</label>
-            <select id="endTime"
-                    class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300 focus:border-green-500 outline-none">
-                <option value="08:30">08:30</option>
-                <option value="09:00">09:00</option>
-                <option value="09:30">09:30</option>
-                <option value="10:00">10:00</option>
-                <option value="10:30">10:30</option>
-                <option value="11:00">11:00</option>
-                <option value="11:30">11:30</option>
-                <option value="12:00">12:00</option>
-                <option value="12:30">12:30</option>
-                <option value="13:00">13:00</option>
-                <option value="13:30">13:30</option>
-                <option value="14:00">14:00</option>
-                <option value="14:30">14:30</option>
-                <option value="15:00">15:00</option>
-                <option value="15:30">15:30</option>
-                <option value="16:00">16:00</option>
-                <option value="16:30">16:30</option>
-                <option value="17:00">17:00</option>
-                <option value="17:30">17:30</option>
-                <option value="18:00">18:00</option>
-                <option value="18:30">18:30</option>
-                <option value="19:00">19:00</option>
-                <option value="19:30">19:30</option>
-                <option value="20:00">20:00</option>
-            </select>
-        </div>
-
-        <div class="modal-buttons">
-            <button id="cancelButton" class="btn-cancel">Anuluj</button>
-            <button id="confirmButton" class="btn-confirm">Potwierdź</button>
-        </div>
-    </div>
-</div>
 
 <!-- Modal potwierdzenia dodania terminu -->
 <div id="confirmationModal" class="custom-modal">
@@ -302,63 +234,92 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var calendarEl = document.getElementById('calendar');
-        var timeSelectModal = document.getElementById('timeSelectModal');
-        var selectedDateEl = document.getElementById('selectedDate');
-        var startTimeSelect = document.getElementById('startTime');
-        var endTimeSelect = document.getElementById('endTime');
-        var cancelButton = document.getElementById('cancelButton');
-        var confirmButton = document.getElementById('confirmButton');
+      var calendarEl = document.getElementById('calendar');
+      var selectedDateEl = document.getElementById('selectedDate');
+      var startTimeSelect = document.getElementById('startTime');
+      var endTimeSelect = document.getElementById('endTime');
+      var cancelButton = document.getElementById('cancelButton');
+      var confirmButton = document.getElementById('confirmButton');
 
-        // Zmienne do przechowywania danych terminu przed dodaniem
-        var appointmentToAdd = null;
-        var confirmationModal = document.getElementById('confirmationModal');
-        var appointmentDetailsEl = document.getElementById('appointmentDetails');
-        var cancelAppointmentButton = document.getElementById('cancelAppointmentButton');
-        var confirmAppointmentButton = document.getElementById('confirmAppointmentButton');
+      // Zmienne do przechowywania danych terminu przed dodaniem
+      var appointmentToAdd = null;
+      var confirmationModal = document.getElementById('confirmationModal');
+      var appointmentDetailsEl = document.getElementById('appointmentDetails');
+      var cancelAppointmentButton = document.getElementById('cancelAppointmentButton');
+      var confirmAppointmentButton = document.getElementById('confirmAppointmentButton');
 
-        // Zmienna do przechowywania wybranej daty
-        var selectedDate = null;
-function isEventConfirmed(eventDate) {
-    // Sprawdź czy termin o tej dacie jest już potwierdzony
-    const existingEvents = calendar.getEvents();
-    return existingEvents.some(event => {
-        // Sprawdź czy event ma status confirmed lub przypisanego studenta
-        const isConfirmed = event.extendedProps &&
-                          (event.extendedProps.status === 'confirmed' ||
-                           event.extendedProps.student);
+      // Zmienna do przechowywania wybranej daty
+      var selectedDate = null;
 
-        // Sprawdź czy daty się pokrywają
-        const eventStart = event.start;
-        const eventEnd = event.end;
+      // Funkcja do aktualizacji informacji o widoku miesiąca
+      function updateMonthViewInfo() {
+          // Usuń istniejący element, jeśli istnieje
+          const existingInfo = document.getElementById('monthViewInfo');
+          if (existingInfo) {
+              existingInfo.remove();
+          }
 
-        const overlap = (
-            (eventDate.start >= eventStart && eventDate.start < eventEnd) ||
-            (eventDate.end > eventStart && eventDate.end <= eventEnd) ||
-            (eventDate.start <= eventStart && eventDate.end >= eventEnd)
-        );
+          // Sprawdź aktualny widok
+          if (calendar.view.type === 'dayGridMonth') {
+              // Dodaj element informacyjny pod paskiem narzędzi
+              const calendarHeader = document.querySelector('.fc-header-toolbar');
+              if (calendarHeader) {
+                  const infoElement = document.createElement('div');
+                  infoElement.id = 'monthViewInfo';
+                  infoElement.className = 'text-center text-gray-600 mt-2';
+                  infoElement.innerHTML = 'Aby dodać lub anulować termin, przejdź do widoku tygodnia lub dnia';
+                  calendarHeader.parentNode.insertBefore(infoElement, calendarHeader.nextSibling);
+              }
+          }
+      }
 
-        return isConfirmed && overlap;
-    });
-}
-        // Funkcja do pokazywania modalu potwierdzenia
+      function isEventConfirmed(eventDate) {
+          // Sprawdź czy termin o tej dacie jest już potwierdzony
+          const existingEvents = calendar.getEvents();
+          return existingEvents.some(event => {
+              // Sprawdź czy event ma status confirmed lub przypisanego studenta
+              const isConfirmed = event.extendedProps &&
+                                (event.extendedProps.status === 'confirmed' ||
+                                 event.extendedProps.student);
+
+              // Sprawdź czy daty się pokrywają
+              const eventStart = event.start;
+              const eventEnd = event.end;
+
+              const overlap = (
+                  (eventDate.start >= eventStart && eventDate.start < eventEnd) ||
+                  (eventDate.end > eventStart && eventDate.end <= eventEnd) ||
+                  (eventDate.start <= eventStart && eventDate.end >= eventEnd)
+              );
+
+              return isConfirmed && overlap;
+          });
+      }
+
         function showConfirmationModal(info) {
             appointmentToAdd = info;
 
-            var startDate = info.start.toLocaleDateString('pl-PL', {
+            // Użyj metody format z FullCalendar
+            var startDate = calendar.formatDate(info.start, {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
+                locale: 'pl' // Upewnij się, że locale jest ustawione
             });
-            var startTime = info.start.toLocaleTimeString('pl-PL', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            var endTime = info.end.toLocaleTimeString('pl-PL', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+
+             var startTime = calendar.formatDate(info.start, {
+                 hour: '2-digit',
+                 minute: '2-digit',
+                 locale: 'pl',
+                 hour12: false // Użyj formatu 24-godzinnego
+             });
+             var endTime = calendar.formatDate(info.end, {
+                 hour: '2-digit',
+                 minute: '2-digit',
+                 locale: 'pl',
+                 hour12: false
+             });
 
             appointmentDetailsEl.innerHTML = `
                 <div><strong>Data:</strong> ${startDate}</div>
@@ -369,352 +330,266 @@ function isEventConfirmed(eventDate) {
             confirmationModal.style.display = "block";
         }
 
-        // Funkcja do zamykania modalu potwierdzenia
-        function closeConfirmationModal() {
-            confirmationModal.style.display = "none";
-            appointmentToAdd = null;
-        }
+      // Funkcja do zamykania modalu potwierdzenia
+      function closeConfirmationModal() {
+          confirmationModal.style.display = "none";
+          appointmentToAdd = null;
+      }
 
-        // Funkcja do obsługi wyboru daty
-       function handleDateSelection(info) {
-    if (isEventConfirmed(info)) {
-        // Pokaż błąd
-        var errorNotification = document.createElement('div');
-        errorNotification.className = 'notification error';
-        errorNotification.innerHTML = 'Ten termin jest już potwierdzony i nie można go edytować.';
-        document.body.appendChild(errorNotification);
+      // Funkcja do obsługi wyboru daty
+      function handleDateSelection(info) {
+          if (isEventConfirmed(info)) {
+              // Pokaż błąd
+              var errorNotification = document.createElement('div');
+              errorNotification.className = 'notification error';
+              errorNotification.innerHTML = 'Ten termin jest już potwierdzony i nie można go edytować.';
+              document.body.appendChild(errorNotification);
 
-        setTimeout(function() {
-            document.body.removeChild(errorNotification);
-        }, 3000);
+              setTimeout(function() {
+                  document.body.removeChild(errorNotification);
+              }, 3000);
 
-        return; // Przerwij operację
-    }
+              return; // Przerwij operację
+          }
 
-    // Jeśli termin nie jest potwierdzony, kontynuuj normalne działanie
-    showConfirmationModal(info);
-}
+          // Jeśli termin nie jest potwierdzony, kontynuuj normalne działanie
+          showConfirmationModal(info);
+      }
 
-function addAppointment(info) {
-    // Sprawdź, czy termin się nie nakłada z istniejącymi
-    const existingEvents = calendar.getEvents();
-    const newEventStart = info.start;
-    const newEventEnd = info.end;
+      function addAppointment(info) {
+          // Sprawdź, czy termin się nie nakłada z istniejącymi
+          const existingEvents = calendar.getEvents();
+          const newEventStart = info.start;
+          const newEventEnd = info.end;
 
-    // Sprawdź nakładanie się terminów
-    const overlappingEvent = existingEvents.find(event => {
-        const eventStart = event.start;
-        const eventEnd = event.end;
+          // Sprawdź nakładanie się terminów
+          const overlappingEvent = existingEvents.find(event => {
+              const eventStart = event.start;
+              const eventEnd = event.end;
 
-        // Sprawdź, czy nowy termin nakłada się z istniejącym
-        return (
-            (newEventStart >= eventStart && newEventStart < eventEnd) || // Początek nowego terminu jest w trakcie istniejącego
-            (newEventEnd > eventStart && newEventEnd <= eventEnd) || // Koniec nowego terminu jest w trakcie istniejącego
-            (newEventStart <= eventStart && newEventEnd >= eventEnd) // Nowy termin zawiera istniejący
-        );
-    });
+              // Sprawdź, czy nowy termin nakłada się z istniejącym
+              return (
+                  (newEventStart >= eventStart && newEventStart < eventEnd) || // Początek nowego terminu jest w trakcie istniejącego
+                  (newEventEnd > eventStart && newEventEnd <= eventEnd) || // Koniec nowego terminu jest w trakcie istniejącego
+                  (newEventStart <= eventStart && newEventEnd >= eventEnd) // Nowy termin zawiera istniejący
+              );
+          });
 
-    if (overlappingEvent) {
-        // Pokazujemy powiadomienie o błędzie
-        var errorNotification = document.createElement('div');
-        errorNotification.className = 'notification error';
-        errorNotification.innerHTML = 'Ten termin nakłada się z istniejącym terminem.';
-        document.body.appendChild(errorNotification);
+          if (overlappingEvent) {
+              // Pokazujemy powiadomienie o błędzie
+              var errorNotification = document.createElement('div');
+              errorNotification.className = 'notification error';
+              errorNotification.innerHTML = 'Ten termin nakłada się z istniejącym terminem.';
+              document.body.appendChild(errorNotification);
 
-        setTimeout(function() {
-            document.body.removeChild(errorNotification);
-        }, 3000);
+              setTimeout(function() {
+                  document.body.removeChild(errorNotification);
+              }, 3000);
 
-        return;
-    }
+              return;
+          }
 
-    // Jeśli wszystko OK, dodaj termin
-    fetch('/instructor/add_appointment', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            start: info.start.toISOString(),
-            end: info.end.toISOString()
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            calendar.refetchEvents();
-            if (typeof showToast === 'function') {
-                showToast('Termin został pomyślnie dodany.', 'success');
-            } else {
-                // Własne powiadomienie o sukcesie
-                var successNotification = document.createElement('div');
-                successNotification.className = 'notification success';
-                successNotification.innerHTML = 'Termin został pomyślnie dodany.';
-                document.body.appendChild(successNotification);
+          // Jeśli wszystko OK, dodaj termin
+          fetch('/instructor/add_appointment', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                  start: info.start.toISOString(),
+                  end: info.end.toISOString()
+              }),
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  calendar.refetchEvents();
+                  if (typeof showToast === 'function') {
+                      showToast('Termin został pomyślnie dodany.', 'success');
+                  } else {
+                      // Własne powiadomienie o sukcesie
+                      var successNotification = document.createElement('div');
+                      successNotification.className = 'notification success';
+                      successNotification.innerHTML = 'Termin został pomyślnie dodany.';
+                      document.body.appendChild(successNotification);
 
-                setTimeout(function() {
-                    document.body.removeChild(successNotification);
-                }, 3000);
-            }
-        } else {
-            if (typeof showToast === 'function') {
-                showToast('Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
-            } else {
-                // Własne powiadomienie o błędzie
-                var errorNotification = document.createElement('div');
-                errorNotification.className = 'notification error';
-                errorNotification.innerHTML = 'Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.');
-                document.body.appendChild(errorNotification);
+                      setTimeout(function() {
+                          document.body.removeChild(successNotification);
+                      }, 3000);
+                  }
+              } else {
+                  if (typeof showToast === 'function') {
+                      showToast('Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
+                  } else {
+                      // Własne powiadomienie o błędzie
+                      var errorNotification = document.createElement('div');
+                      errorNotification.className = 'notification error';
+                      errorNotification.innerHTML = 'Błąd podczas dodawania terminu: ' + (data.message || 'Nieznany błąd.');
+                      document.body.appendChild(errorNotification);
 
-                setTimeout(function() {
-                    document.body.removeChild(errorNotification);
-                }, 3000);
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        if (typeof showToast === 'function') {
-            showToast('Wystąpił błąd podczas dodawania terminu.', 'error');
-        } else {
-            // Własne powiadomienie o błędzie
-            var errorNotification = document.createElement('div');
-            errorNotification.className = 'notification error';
-            errorNotification.innerHTML = 'Wystąpił błąd podczas dodawania terminu.';
-            document.body.appendChild(errorNotification);
+                      setTimeout(function() {
+                          document.body.removeChild(errorNotification);
+                      }, 3000);
+                  }
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              if (typeof showToast === 'function') {
+                  showToast('Wystąpił błąd podczas dodawania terminu.', 'error');
+              } else {
+                  // Własne powiadomienie o błędzie
+                  var errorNotification = document.createElement('div');
+                  errorNotification.className = 'notification error';
+                  errorNotification.innerHTML = 'Wystąpił błąd podczas dodawania terminu.';
+                  document.body.appendChild(errorNotification);
 
-            setTimeout(function() {
-                document.body.removeChild(errorNotification);
-            }, 3000);
-        }
-    });
-}
+                  setTimeout(function() {
+                      document.body.removeChild(errorNotification);
+                  }, 3000);
+              }
+          });
+      }
 
-        // Funkcja do pokazywania modalu wyboru czasu
-        function showTimeSelectModal(date) {
-            selectedDate = date;
-            var formattedDate = date.toLocaleDateString('pl-PL', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            selectedDateEl.textContent = "Wybrany dzień: " + formattedDate;
 
-            // Upewnij się, że godzina końcowa jest zawsze później niż początkowa
-            startTimeSelect.onchange = function() {
-                // Pobierz index wybranej opcji z godziny początkowej
-                var startOptionIndex = startTimeSelect.selectedIndex;
+      // Obsługa przycisków modalu potwierdzenia
+      cancelAppointmentButton.onclick = closeConfirmationModal;
 
-                // Ustaw opcję godziny końcowej o jeden większą
-                var minEndOptionIndex = startOptionIndex + 1;
+      // Funkcja do faktycznego dodania terminu
+      confirmAppointmentButton.onclick = function() {
+          if (!appointmentToAdd) return;
 
-                // Jeśli minEndOptionIndex jest poza zakresem, użyj ostatniej opcji
-                if (minEndOptionIndex >= endTimeSelect.options.length) {
-                    minEndOptionIndex = endTimeSelect.options.length - 1;
-                }
+          addAppointment(appointmentToAdd);
+          closeConfirmationModal();
+      };
 
-                // Jeśli wybrana godzina końcowa jest wcześniejsza niż minimalna, ustaw ją na minimalną
-                if (endTimeSelect.selectedIndex < minEndOptionIndex) {
-                    endTimeSelect.selectedIndex = minEndOptionIndex;
-                }
-            };
+      window.calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'timeGridWeek',
+          slotDuration: '00:30:00',
+          slotMinTime: '08:00:00',
+          slotMaxTime: '20:00:00',
+          locale: 'pl',
+          timeZone: 'Europe/Warsaw',
+          headerToolbar: {
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay'
+          },
+          events: '/instructor/get_appointments',
+          eventClick: function(info) {
+              if (calendar.view.type === 'dayGridMonth') {
+                  return; // Nie pozwól na kliknięcie wydarzeń w widoku miesiąca
+              }
 
-            // Wywołaj onchange raz, aby ustawić prawidłową wartość początkową
-            startTimeSelect.onchange();
+              // Create extended props object if it doesn't exist
+              info.event.extendedProps = info.event.extendedProps || {};
 
-            timeSelectModal.style.display = "block";
-        }
+              // Add student name from the event data
+              info.event.extendedProps.student = info.event.extendedProps.student || "";
+              // Now pass the event to showAppointmentDetails
+              showAppointmentDetails(info.event);
+          },
+          selectable: true,
+          selectAllow: function(selectInfo) {
+              // Nie pozwól na wybór w widoku miesiąca
+              if (calendar.view.type === 'dayGridMonth') {
+                  return false;
+              }
 
-        // Funkcja do zamykania modalu wyboru czasu
-        function closeTimeSelectModal() {
-            timeSelectModal.style.display = "none";
-        }
+              var now = new Date();
+              var oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
-        // Obsługa przycisków modalu wyboru czasu
-        cancelButton.onclick = closeTimeSelectModal;
+              var isFullDay = selectInfo.allDay ||
+                  (selectInfo.start.getHours() === 0 && selectInfo.start.getMinutes() === 0 &&
+                   selectInfo.end.getHours() === 23 && selectInfo.end.getMinutes() === 59);
 
-        // Obsługa przycisków modalu potwierdzenia
-        cancelAppointmentButton.onclick = closeConfirmationModal;
+              if (isFullDay) {
+                  var existingEvents = calendar.getEvents().filter(function(event) {
+                      return event.start.toDateString() === selectInfo.start.toDateString();
+                  });
 
-        // Funkcja do faktycznego dodania terminu
-        confirmAppointmentButton.onclick = function() {
-            if (!appointmentToAdd) return;
+                  if (existingEvents.length > 0) {
+                      return false;
+                  }
+              }
 
-            addAppointment(appointmentToAdd);
-            closeConfirmationModal();
-        };
+              return selectInfo.start >= oneHourFromNow;
+          },
+          select: function(info) {
+              // Sprawdź, czy to jest widok miesiąca
+              if (calendar.view.type === 'dayGridMonth') {
+                  return; // Nie pozwól na wybór terminu w widoku miesiąca
+              } else {
+                  // Dla innych widoków, użyj standardowej funkcji
+                  handleDateSelection(info);
+              }
+          },
+          eventColor: 'gray',
+          eventDidMount: function(info) {
+              if (info.event.extendedProps) {
+                  let color;
 
-confirmButton.onclick = function() {
-    // Pobierz wybrane godziny
-    var startTime = startTimeSelect.value;
-    var endTime = endTimeSelect.value;
+                  if (info.event.extendedProps.is_available) {
+                      color = 'green'; // Jeśli available = true → zielony
+                  } else {
+                      switch (info.event.extendedProps.status) {
+                          case 'pending':
+                              color = 'blue'; // Jeśli available = false i status = pending → żółty
+                              break;
+                          case 'confirmed':
+                              color = 'gray'; // Jeśli available = false i status = confirmed → niebieski
+                              break;
+                      }
+                  }
+              }
+          },
+          // Dodaj obsługę zmiany widoku
+          datesSet: function(info) {
+              updateMonthViewInfo();
+          }
+      });
 
-    // Utwórz obiekty Date z wybraną datą i godzinami
-    var startDateTime = new Date(selectedDate);
-    var [startHours, startMinutes] = startTime.split(':').map(Number);
-    startDateTime.setHours(startHours, startMinutes, 0, 0);
+      calendar.render();
 
-    var endDateTime = new Date(selectedDate);
-    var [endHours, endMinutes] = endTime.split(':').map(Number);
-    endDateTime.setHours(endHours, endMinutes, 0, 0);
+      // Wywołaj funkcję updateMonthViewInfo po pierwszym renderowaniu
+      updateMonthViewInfo();
+  });
 
-    // Sprawdź, czy wybrane daty są w przyszłości
-    var now = new Date();
-    var oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+  // Funkcja showAppointmentDetails
+  function showAppointmentDetails(event) {
+      // Jeśli funkcja nie istnieje, stwórz pustą funkcję
+      if (typeof window.showAppointmentDetails !== 'function') {
+          window.showAppointmentDetails = function(event) {
+              // Stwórz modal zamiast alert
+              var detailsModal = document.createElement('div');
+              detailsModal.className = 'custom-modal';
+              detailsModal.style.display = 'block';
 
-    if (startDateTime < oneHourFromNow) {
-        // Powiadomienie zamiast alert
-        var errorNotification = document.createElement('div');
-        errorNotification.className = 'notification error';
-        errorNotification.innerHTML = 'Termin musi być co najmniej godzinę od teraz.';
-        document.body.appendChild(errorNotification);
+              detailsModal.innerHTML = `
+                  <div class="modal-content">
+                      <h2 class="modal-title text-xl">Szczegóły terminu</h2>
+                      <div class="date-time-info">
+                          <div><strong>Start:</strong> ${event.start.toLocaleString()}</div>
+                          <div><strong>Koniec:</strong> ${event.end.toLocaleString()}</div>
+                          ${event.extendedProps.student ? `<div><strong>Student:</strong> ${event.extendedProps.student}</div>` : ''}
+                      </div>
+                      <div class="modal-buttons">
+                          <button class="btn-confirm">Zamknij</button>
+                      </div>
+                  </div>
+              `;
 
-        setTimeout(function() {
-            document.body.removeChild(errorNotification);
-        }, 3000);
-        return;
-    }
+              document.body.appendChild(detailsModal);
 
-    // Sprawdź, czy termin nie jest już potwierdzony
-    const dateInfo = {
-        start: startDateTime,
-        end: endDateTime
-    };
+              var closeButton = detailsModal.querySelector('button');
+              closeButton.onclick = function() {
+                  document.body.removeChild(detailsModal);
+              };
+          };
+      }
 
-    if (isEventConfirmed(dateInfo)) {
-        var errorNotification = document.createElement('div');
-        errorNotification.className = 'notification error';
-        errorNotification.innerHTML = 'Ten termin jest już potwierdzony i nie można go edytować.';
-        document.body.appendChild(errorNotification);
-
-        setTimeout(function() {
-            document.body.removeChild(errorNotification);
-        }, 3000);
-        return;
-    }
-
-    // Dodaj termin - wywołaj funkcję handleDateSelection
-    handleDateSelection(dateInfo);
-
-    // Zamknij modal wyboru czasu
-    closeTimeSelectModal();
-};
-
-        window.calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridWeek',
-            slotDuration: '00:30:00',
-            slotMinTime: '08:00:00',
-            slotMaxTime: '20:00:00',
-            locale: 'pl',
-            timeZone: 'Europe/Warsaw',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            },
-            events: '/instructor/get_appointments',
-            eventClick: function(info) {
-                // Create extended props object if it doesn't exist
-                info.event.extendedProps = info.event.extendedProps || {};
-
-                // Add student name from the event data
-                info.event.extendedProps.student = info.event.extendedProps.student || "";
-                // Now pass the event to showAppointmentDetails
-                showAppointmentDetails(info.event);
-            },
-            selectable: true,
-            selectAllow: function(selectInfo) {
-                var now = new Date();
-                var oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-
-                var isFullDay = selectInfo.allDay ||
-                    (selectInfo.start.getHours() === 0 && selectInfo.start.getMinutes() === 0 &&
-                     selectInfo.end.getHours() === 23 && selectInfo.end.getMinutes() === 59);
-
-                if (isFullDay) {
-                    var existingEvents = calendar.getEvents().filter(function(event) {
-                        return event.start.toDateString() === selectInfo.start.toDateString();
-                    });
-
-                    if (existingEvents.length > 0) {
-                        return false;
-                    }
-                }
-
-                return selectInfo.start >= oneHourFromNow;
-            },
-            select: function(info) {
-                // Sprawdź, czy to jest widok miesiąca
-                if (calendar.view.type === 'dayGridMonth') {
-                    // Pokaż modal do wyboru godzin
-                    showTimeSelectModal(info.start);
-                } else {
-                    // Dla innych widoków, użyj standardowej funkcji
-                    handleDateSelection(info);
-                }
-            },
-            eventColor: 'gray',
-            eventDidMount: function(info) {
-                if (info.event.extendedProps) {
-                    let color;
-
-                    if (info.event.extendedProps.is_available) {
-                        color = 'green'; // Jeśli available = true → zielony
-                    } else {
-                        switch (info.event.extendedProps.status) {
-                            case 'pending':
-                                color = 'blue'; // Jeśli available = false i status = pending → żółty
-                                break;
-                            case 'confirmed':
-                                color = 'gray'; // Jeśli available = false i status = confirmed → niebieski
-                                break;
-                        }
-                    }
-
-                    info.el.style.backgroundColor = color;
-                }
-            }
-        });
-        calendar.render();
-    });
-
-    // Funkcja showAppointmentDetails - zakładam, że jest zdefiniowana gdzie indziej
-    function showAppointmentDetails(event) {
-        // Jeśli funkcja nie istnieje, stwórz pustą funkcję
-        if (typeof window.showAppointmentDetails !== 'function') {
-            window.showAppointmentDetails = function(event) {
-
-                // Stwórz modal zamiast alert
-                var detailsModal = document.createElement('div');
-                detailsModal.className = 'custom-modal';
-                detailsModal.style.display = 'block';
-
-                detailsModal.innerHTML = `
-                    <div class="modal-content">
-                        <h2 class="modal-title text-xl">Szczegóły terminu</h2>
-                        <div class="date-time-info">
-                            <div><strong>Start:</strong> ${event.start.toLocaleString()}</div>
-                            <div><strong>Koniec:</strong> ${event.end.toLocaleString()}</div>
-                            ${event.extendedProps.student ? `<div><strong>Student:</strong> ${event.extendedProps.student}</div>` : ''}
-                        </div>
-                        <div class="modal-buttons">
-                            <button class="btn-confirm">Zamknij</button>
-                        </div>
-                    </div>
-                `;
-
-                document.body.appendChild(detailsModal);
-
-                var closeButton = detailsModal.querySelector('button');
-                closeButton.onclick = function() {
-                    document.body.removeChild(detailsModal);
-                };
-            };
-        }
-
-        // Wywołaj funkcję
-        window.showAppointmentDetails(event);
-    }
+      // Wywołaj funkcję
+      window.showAppointmentDetails(event);
+  }
 </script>
 {% endblock %}

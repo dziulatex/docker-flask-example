@@ -135,7 +135,7 @@
 
 window.showAppointmentDetails = function(event) {
     window.modal = document.getElementById('appointmentModal');
-    document.getElementById("modalTitle").innerText = event.title;
+    document.getElementById("modalTitle").innerText = event.extendedProps.titleMessage;
 
     // Sprawdzenie, czy wydarzenie trwa dokładnie 24 godziny
     const isAllDay = (event.end - event.start) === 24 * 60 * 60 * 1000; // 24 godziny w milisekundach
