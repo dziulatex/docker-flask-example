@@ -100,10 +100,11 @@ def get_appointments():
 
             events.append({
                 'id': appointment.id,
-                'title': title,
+                'titleMessage': title,
+                'title': '',
                 'start': appointment.start_time.isoformat(),
                 'end': appointment.end_time.isoformat(),
-                'color': color
+                'color': color,
             })
 
         return jsonify(events)

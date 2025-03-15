@@ -186,7 +186,7 @@
             fetch('/api/instructors')
                 .then(response => response.json())
                 .then(data => {
-                    instructorSelect.innerHTML = '<option value="">Wybierz instruktora</option>';
+                    instructorSelect.innerHTML = '';
                     data.forEach(instructor => {
                         const option = document.createElement('option');
                         option.value = instructor.id;
@@ -225,118 +225,151 @@
         });
 
         // Funkcja inicjalizująca kalendarz
-        function initializeCalendar(instructorId) {
-            window.calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                slotDuration: '00:30:00',
-                slotMinTime: '08:00:00',
-                slotMaxTime: '20:00:00',
-                locale: 'pl',
-                timeZone: 'Europe/Warsaw',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                events: `/calendar/get_appointments?instructor_id=${instructorId}`,
-                eventDidMount: function(info) {
-                    var eventStart = info.event.start;
-                    var now = new Date();
-                    var thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000);
+     // Funkcja inicjalizująca kalendarz z blokadą interakcji w widoku miesiąca
+function initializeCalendar(instructorId) {
+    window.calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        slotDuration: '00:30:00',
+        slotMinTime: '08:00:00',
+        slotMaxTime: '20:00:00',
+        locale: 'pl',
+        timeZone: 'Europe/Warsaw',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: `/calendar/get_appointments?instructor_id=${instructorId}`,
+        eventDidMount: function(info) {
+            var eventStart = info.event.start;
+            var now = new Date();
+            var thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000);
 
-                    if (eventStart < thirtyMinutesFromNow) {
-                        info.el.classList.add('disabled-event');
+            // Dodaj klasę dla wydarzeń w przeszłości
+            if (eventStart < thirtyMinutesFromNow) {
+                info.el.classList.add('disabled-event');
+            }
+
+            // Dodaj klasę dla wszystkich wydarzeń w widoku miesiąca
+        },
+        eventClick: function(info) {
+            // Sprawdź czy jesteśmy w widoku miesiąca
+            if (calendar.view.type === 'dayGridMonth') {
+                return; // Zatrzymaj interakcję w widoku miesiąca
+            }
+
+            var eventStart = info.event.start;
+            var now = new Date();
+            var thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000);
+
+            if (eventStart < thirtyMinutesFromNow) {
+                showToast('Nie można dodać terminu w tym czasie.', 'error');
+                return; // Zatrzymuje dalsze przetwarzanie kliknięcia
+            }
+            if (info.event.backgroundColor === 'green') {
+                Swal.fire({
+                    title: 'Dodaj Termin',
+                    input: 'text',
+                    inputLabel: 'Wprowadź temat wizyty:',
+                    inputPlaceholder: 'Temat...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Dodaj',
+                    cancelButtonText: 'Anuluj',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Musisz wprowadzić temat wizyty!';
+                        }
+                        return null;
                     }
-                },
-                eventClick: function(info) {
-                    var eventStart = info.event.start;
-                    var now = new Date();
-                    var thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000);
-
-                    if (eventStart < thirtyMinutesFromNow) {
-                        showToast('Nie można dodać terminu w tym czasie.', 'error');
-                        return; // Zatrzymuje dalsze przetwarzanie kliknięcia
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var topic = result.value;
+                        fetch('/calendar/book/' + info.event.id, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                topic: topic,
+                                instructor_id: selectedInstructorId
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                calendar.refetchEvents(); // Odświeża kalendarz po udanej rezerwacji
+                                showToast('Termin został pomyślnie zarezerwowany.', 'success');
+                            } else {
+                                showToast('Błąd podczas rezerwacji terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Błąd:', error);
+                            showToast('Wystąpił błąd podczas rezerwacji terminu.', 'error');
+                        });
                     }
+                });
+            } else if (info.event.backgroundColor == 'grey' || info.event.backgroundColor == 'blue') {
+                Swal.fire({
+                    title: 'Anuluj Termin',
+                    text: 'Temat wizyty: '+ info.event.extendedProps.titleMessage,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Tak, anuluj',
+                    cancelButtonText: 'Nie, pozostaw',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/calendar/cancel/' + info.event.id, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                calendar.refetchEvents(); // Odświeża kalendarz po udanym anulowaniu
+                                showToast('Termin został pomyślnie anulowany.', 'success');
+                            } else {
+                                showToast('Błąd podczas anulowania terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Błąd:', error);
+                            showToast('Wystąpił błąd podczas anulowania terminu.', 'error');
+                        });
+                    }
+                });
+            }
+        },
+        // Dodaj obsługę przełączania widoków
+        datesSet: function(info) {
+            // Wykonaj kod po zmianie widoku lub dat
+            if (calendar.view.type === 'dayGridMonth') {
+                // Znajdź wszystkie wydarzenia w widoku miesiąca i zastosuj dla nich styl
 
-                    if (info.event.title === 'Dostępny') {
-                        Swal.fire({
-                            title: 'Dodaj Termin',
-                            input: 'text',
-                            inputLabel: 'Wprowadź temat wizyty:',
-                            inputPlaceholder: 'Temat...',
-                            showCancelButton: true,
-                            confirmButtonText: 'Dodaj',
-                            cancelButtonText: 'Anuluj',
-                            inputValidator: (value) => {
-                                if (!value) {
-                                    return 'Musisz wprowadzić temat wizyty!';
-                                }
-                                return null;
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                var topic = result.value;
-                                fetch('/calendar/book/' + info.event.id, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        topic: topic,
-                                        instructor_id: selectedInstructorId
-                                    }),
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.status === 'success') {
-                                        calendar.refetchEvents(); // Odświeża kalendarz po udanej rezerwacji
-                                        showToast('Termin został pomyślnie zarezerwowany.', 'success');
-                                    } else {
-                                        showToast('Błąd podczas rezerwacji terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Błąd:', error);
-                                    showToast('Wystąpił błąd podczas rezerwacji terminu.', 'error');
-                                });
-                            }
-                        });
-                    } else if (info.event.title.startsWith('Temat konsultacji:')) {
-                        Swal.fire({
-                            title: 'Anuluj Termin',
-                            text: 'Czy chcesz anulować tę wizytę?',
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Tak, anuluj',
-                            cancelButtonText: 'Nie, pozostaw',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                fetch('/calendar/cancel/' + info.event.id, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.status === 'success') {
-                                        calendar.refetchEvents(); // Odświeża kalendarz po udanym anulowaniu
-                                        showToast('Termin został pomyślnie anulowany.', 'success');
-                                    } else {
-                                        showToast('Błąd podczas anulowania terminu: ' + (data.message || 'Nieznany błąd.'), 'error');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Błąd:', error);
-                                    showToast('Wystąpił błąd podczas anulowania terminu.', 'error');
-                                });
-                            }
-                        });
+                // Pokaż informację o widoku miesiąca jeśli jeszcze nie istnieje
+                if (!document.getElementById('monthViewInfo')) {
+                    const calendarHeader = document.querySelector('.fc-header-toolbar');
+                    if (calendarHeader) {
+                        const infoElement = document.createElement('div');
+                        infoElement.id = 'monthViewInfo';
+                        infoElement.className = 'text-center text-gray-600 mt-2';
+                        infoElement.innerHTML = 'Aby dodać lub anulować termin, przejdź do widoku tygodnia lub dnia';
+                        calendarHeader.parentNode.insertBefore(infoElement, calendarHeader.nextSibling);
                     }
                 }
-            });
-            calendar.render();
+            } else {
+                // Usuń informację o widoku miesiąca jeśli istnieje
+                const monthViewInfo = document.getElementById('monthViewInfo');
+                if (monthViewInfo) {
+                    monthViewInfo.remove();
+                }
+            }
         }
+    });
+    calendar.render();
+}
 
         // Ładujemy instruktorów przy załadowaniu strony
         loadInstructors();
