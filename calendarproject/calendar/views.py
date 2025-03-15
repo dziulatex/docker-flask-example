@@ -35,6 +35,7 @@ def get_appointments():
     start_str = request.args.get('start', type=str)
     end_str = request.args.get('end', type=str)
     tz_str = request.args.get('timeZone', type=str, default='UTC')
+    instructor_id = request.args.get('instructor_id', type=int)
 
     try:
         # Parsowanie strefy czasowej
@@ -62,16 +63,25 @@ def get_appointments():
         start_utc = start.astimezone(pytz.UTC)
         end_utc = end.astimezone(pytz.UTC)
 
-        # Filtrowanie terminów:
-        # Tylko dostępne terminy lub terminy zarezerwowane przez bieżącego użytkownika
-        appointments = Appointment.query.filter(
+        # Przygotowanie zapytania bazowego
+        query = Appointment.query.filter(
             Appointment.start_time >= start_utc,
-            Appointment.start_time <= end_utc,
+            Appointment.start_time <= end_utc
+        )
+
+        # Dodanie filtra instruktora, jeśli podano instructor_id
+        if instructor_id:
+            query = query.filter(Appointment.instructor_id == instructor_id)
+
+        # Filtrowanie terminów: dostępne lub zarezerwowane przez bieżącego użytkownika
+        query = query.filter(
             or_(
                 Appointment.is_available == True,
                 Appointment.student_id == current_user.id
             )
-        ).all()
+        )
+
+        appointments = query.all()
 
         # Przygotowanie wydarzeń do zwrócenia
         events = []
@@ -79,9 +89,12 @@ def get_appointments():
             if appointment.is_available:
                 title = 'Dostępny'
                 color = 'green'
-            elif appointment.student_id == current_user.id:
+            elif appointment.student_id == current_user.id and appointment.status != 'confirmed':
                 title = f'Temat konsultacji: {appointment.topic}'
                 color = 'blue'
+            elif appointment.student_id == current_user.id and appointment.status == 'confirmed':
+                title = f'Temat konsultacji: {appointment.topic}'
+                color = 'grey'
             else:
                 continue  # Pomijanie terminów zarezerwowanych przez innych uczniów
 
@@ -133,7 +146,7 @@ def book(appointment_id):
         notify_instructor_new_appointment(appointment.instructor, appointment)
         notification = Notification(
             user_id=appointment.instructor_id,
-            message=f'Nowa wizyta do zaakceptowania na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} od {current_user.first_name + " " + current_user.last_name}.',
+            message=f'Nowa wizyta do zaakceptowania na {appointment.start_time.strftime("%Y-%m-%d %H:%M")} od {current_user.first_name + " " + current_user.last_name} na temat: ' + appointment.topic + '.',
             type='appointment',
             related_id=appointment.id
         )
@@ -148,7 +161,7 @@ def book(appointment_id):
             {'status': 'error', 'message': 'Wystąpił błąd podczas rezerwacji terminu. Proszę spróbować ponownie.'}), 500
 
 
-@calendar.route('/cancel/<int:appointment_id>', methods=['POST'])
+@calendar.route('/calendar/cancel/<int:appointment_id>', methods=['POST'])
 @login_required
 def cancel(appointment_id):
     if current_user.is_instructor or current_user.is_admin:
