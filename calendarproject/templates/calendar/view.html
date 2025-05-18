@@ -275,6 +275,10 @@ function initializeCalendar(instructorId) {
                     showCancelButton: true,
                     confirmButtonText: 'Dodaj',
                     cancelButtonText: 'Anuluj',
+                    customClass: {
+                        confirmButton: 'swal2-confirm-custom',
+                        cancelButton: 'swal2-cancel-custom'
+                    },
                     inputValidator: (value) => {
                         if (!value) {
                             return 'Musisz wprowadzić temat wizyty!';
@@ -317,6 +321,10 @@ function initializeCalendar(instructorId) {
                     showCancelButton: true,
                     confirmButtonText: 'Tak, anuluj',
                     cancelButtonText: 'Nie, pozostaw',
+                    customClass: {
+                        confirmButton: 'swal2-confirm-custom',
+                        cancelButton: 'swal2-cancel-custom'
+                    }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         fetch('/calendar/cancel/' + info.event.id, {
