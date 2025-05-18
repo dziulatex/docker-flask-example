@@ -23,7 +23,7 @@ instructor = Blueprint('instructor', __name__)
 def get_instructors():
     current_app.logger.info(f"Dostęp do /api/instructors. Metoda: {request.method}")
     try:
-        instructors = User.query.filter_by(is_instructor=True).all()
+        instructors = User.query.filter_by(is_instructor=True, deleted=False).all()
         instructors_data = [{
             'id': instructor.id,
             'first_name': instructor.first_name,

@@ -5,6 +5,7 @@ from calendarproject.models.user import User
 from calendarproject.extensions import db
 from calendarproject.forms.forms import CreateInstructorForm
 from calendarproject.models.notification import Notification
+import traceback
 
 admin = Blueprint('admin', __name__)
 
@@ -24,7 +25,7 @@ def dashboard():
     available_appointments = [apt for apt in appointments if apt.is_available]
 
     # Get instructors for the instructor list
-    instructors = User.query.filter_by(is_instructor=True).all()
+    instructors = User.query.filter_by(is_instructor=True, deleted=False).all()
 
     # Form for adding a new instructor
     form = CreateInstructorForm()
@@ -93,7 +94,7 @@ def delete_instructor(instructor_id):
         current_app.logger.info(f"Usunięto wszystkie ({deleted_appointments_count}) terminy instruktora.")
 
         # Usuń instruktora
-        db.session.delete(instructor_to_delete)
+        instructor_to_delete.soft_delete()
         db.session.commit()
 
         current_app.logger.info(f"Instruktor {instructor_name} (ID: {instructor_id}) został pomyślnie usunięty.")
