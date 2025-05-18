@@ -300,7 +300,6 @@
 
         function showConfirmationModal(info) {
             appointmentToAdd = info;
-
             // Użyj metody format z FullCalendar
             var startDate = calendar.formatDate(info.start, {
                 weekday: 'long',
@@ -493,6 +492,7 @@
             },
             selectable: true,
             selectAllow: function (selectInfo) {
+                console.log('xddd');
                 // Nie pozwól na wybór w widoku miesiąca
                 if (calendar.view.type === 'dayGridMonth') {
                     return false;
@@ -518,6 +518,7 @@
                 return selectInfo.start >= oneHourFromNow;
             },
             select: function (info) {
+                console.log('dxddddd');
                 // Sprawdź, czy to jest widok miesiąca
                 if (calendar.view.type === 'dayGridMonth') {
                     return; // Nie pozwól na wybór terminu w widoku miesiąca
@@ -526,20 +527,21 @@
                     handleDateSelection(info);
                 }
             },
-            eventColor: 'gray',
+            eventColor: '#B39DDB',
             eventDidMount: function (info) {
+                console.log('hahha');
                 if (info.event.extendedProps) {
                     let color;
 
                     if (info.event.extendedProps.is_available) {
-                        color = 'green'; // Jeśli available = true → zielony
+                        color = '#7ED6A5'; // Jeśli available = true → zielony
                     } else {
                         switch (info.event.extendedProps.status) {
                             case 'pending':
-                                color = 'blue'; // Jeśli available = false i status = pending → żółty
+                                color = '#F4C95D'; // Jeśli available = false i status = pending → żółty
                                 break;
                             case 'confirmed':
-                                color = 'gray'; // Jeśli available = false i status = confirmed → niebieski
+                                color = '#B39DDB'; // Jeśli available = false i status = confirmed → niebieski
                                 break;
                         }
                     }

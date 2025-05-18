@@ -88,13 +88,13 @@ def get_appointments():
         for appointment in appointments:
             if appointment.is_available:
                 title = 'Dostępny'
-                color = 'green'
+                color = '#7ED6A5'
             elif appointment.student_id == current_user.id and appointment.status != 'confirmed':
                 title = f'Temat konsultacji: {appointment.topic}'
-                color = 'blue'
+                color = '#F4C95D'
             elif appointment.student_id == current_user.id and appointment.status == 'confirmed':
                 title = f'Temat konsultacji: {appointment.topic}'
-                color = 'grey'
+                color = '#B39DDB'
             else:
                 continue  # Pomijanie terminów zarezerwowanych przez innych uczniów
 

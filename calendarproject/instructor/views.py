@@ -114,7 +114,7 @@ def get_appointments():
                 'is_available': appointment.is_available,
                 'start': appointment.start_time.isoformat(),
                 'end': appointment.end_time.isoformat(),
-                'color': 'green' if appointment.is_available else 'blue',
+                'color': '#7ED6A5' if appointment.is_available else ('#F4C95D' if appointment.status == 'pending' else '#B39DDB'),
                 'status': appointment.status
             })
 
