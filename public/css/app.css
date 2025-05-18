@@ -1113,7 +1113,18 @@ video {
     padding-right: 0px;
   }
 }
-
+.btn-cancel {
+  background-color: #F26C6C;
+}
+.btn-cancel:hover {
+  background-color: #d15555;
+}
+.btn-confirm {
+  background-color: #4CAF8B;
+}
+.btn-confirm:hover {
+  background-color: #3a8b6f;
+}
 @media (min-width: 768px) {
   .md\:col-span-2 {
     grid-column: span 2 / span 2;
