@@ -265,13 +265,13 @@ window.showAppointmentDetails = function(event) {
             <p class="text-xs text-gray-500">${new Date(notification.timestamp).toLocaleString()}</p>
             <div class="mt-2">
               ${!notification.is_read ?
-                `<button class="read-notification bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs mr-2">
-                  Przeczytałem
-                </button>` : ''
-              }
-              <button class="delete-notification bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs">
-                Usuń
-              </button>
+              `<button class="read-notification bg-[#4CAF8B] hover:bg-[#3a8b6f] text-white font-bold py-1 px-2 rounded text-xs mr-2">
+                Przeczytałem
+              </button>` : ''
+                    }
+               <button class="delete-notification bg-[#F26C6C] hover:bg-[#d15555] text-white font-bold py-1 px-2 rounded text-xs">
+                  Usuń
+               </button>
             </div>
           </div>
         `).join('');
