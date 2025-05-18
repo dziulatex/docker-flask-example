@@ -266,7 +266,7 @@ function initializeCalendar(instructorId) {
                 showToast('Nie można dodać terminu w tym czasie.', 'error');
                 return; // Zatrzymuje dalsze przetwarzanie kliknięcia
             }
-            if (info.event.backgroundColor === '#7ED6A5') {
+            if (info.event.backgroundColor === '#1B8359') {
                 Swal.fire({
                     title: 'Dodaj Termin',
                     input: 'text',
@@ -313,7 +313,7 @@ function initializeCalendar(instructorId) {
                         });
                     }
                 });
-            } else if (info.event.backgroundColor == '#B39DDB' || info.event.backgroundColor == '#F4C95D') {
+            } else if (info.event.backgroundColor == '#9C27B0' || info.event.backgroundColor == '#996C00') {
                 Swal.fire({
                     title: 'Anuluj Termin',
                     text: 'Temat wizyty: '+ info.event.extendedProps.titleMessage,

@@ -90,13 +90,13 @@
         <p id="modalTime"></p>
         <p id="modalStudent"></p>
         <div id="modalActions" class="mt-4">
-            <button id="acceptBtn" class="bg-[#4CAF8B] hover:bg-[#3a8b6f] text-white font-bold py-2 px-4 rounded mr-2">
+            <button id="acceptBtn" class="bg-[#1B8359] hover:bg-[#3a8b6f] text-white font-bold py-2 px-4 rounded mr-2">
                 Akceptuj
             </button>
-            <button id="rejectBtn" class="bg-[#F26C6C] hover:bg-[#d15555] text-white font-bold py-2 px-4 rounded">
+            <button id="rejectBtn" class="bg-[#D32F2F] hover:bg-[#d15555] text-white font-bold py-2 px-4 rounded">
                 Odrzuć
             </button>
-            <button id="cancelBtn" class="bg-[#F26C6C] hover:bg-[#3a8b6f] text-white font-bold py-2 px-4 rounded mr-2"
+            <button id="cancelBtn" class="bg-[#D32F2F] hover:bg-[#3a8b6f] text-white font-bold py-2 px-4 rounded mr-2"
                     style="display:none">
                 Anuluj
             </button>
@@ -266,11 +266,11 @@ window.showAppointmentDetails = function(event) {
             <p class="text-xs text-gray-500">${new Date(notification.timestamp).toLocaleString()}</p>
             <div class="mt-2">
               ${!notification.is_read ?
-              `<button class="read-notification bg-[#4CAF8B] hover:bg-[#3a8b6f] text-white font-bold py-1 px-2 rounded text-xs mr-2">
+              `<button class="read-notification bg-[#1B8359] hover:bg-[#3a8b6f] text-white font-bold py-1 px-2 rounded text-xs mr-2">
                 Przeczytałem
               </button>` : ''
                     }
-               <button class="delete-notification bg-[#F26C6C] hover:bg-[#d15555] text-white font-bold py-1 px-2 rounded text-xs">
+               <button class="delete-notification bg-[#D32F2F] hover:bg-[#d15555] text-white font-bold py-1 px-2 rounded text-xs">
                   Usuń
                </button>
             </div>

@@ -223,11 +223,11 @@
 
         <div class="modal-buttons">
             <button id="cancelAppointmentButton"
-                    class="btn-cancel bg-[#F26C6C] hover:bg-[#d15555] text-white font-bold py-2 px-4 rounded mr-2">
+                    class="btn-cancel bg-[#D32F2F] hover:bg-[#d15555] text-white font-bold py-2 px-4 rounded mr-2">
                 Anuluj
             </button>
             <button id="confirmAppointmentButton"
-                    class="btn-confirm bg-[#4CAF8B] hover:bg-[#3a8b6f] text-white font-bold py-2 px-4 rounded">Dodaj
+                    class="btn-confirm bg-[#1B8359] hover:bg-[#3a8b6f] text-white font-bold py-2 px-4 rounded">Dodaj
                 termin
             </button>
         </div>
@@ -527,21 +527,21 @@
                     handleDateSelection(info);
                 }
             },
-            eventColor: '#B39DDB',
+            eventColor: '#9C27B0',
             eventDidMount: function (info) {
                 console.log('hahha');
                 if (info.event.extendedProps) {
                     let color;
 
                     if (info.event.extendedProps.is_available) {
-                        color = '#7ED6A5'; // Jeśli available = true → zielony
+                        color = '#1B8359'; // Jeśli available = true → zielony
                     } else {
                         switch (info.event.extendedProps.status) {
                             case 'pending':
-                                color = '#F4C95D'; // Jeśli available = false i status = pending → żółty
+                                color = '#996C00'; // Jeśli available = false i status = pending → żółty
                                 break;
                             case 'confirmed':
-                                color = '#B39DDB'; // Jeśli available = false i status = confirmed → niebieski
+                                color = '#9C27B0'; // Jeśli available = false i status = confirmed → niebieski
                                 break;
                         }
                     }
