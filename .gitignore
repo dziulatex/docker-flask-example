@@ -1,4 +1,4 @@
 .idea/
 logs/
-.env.local
-calendarproject/.env.local
+.env
+calendarproject/.env
