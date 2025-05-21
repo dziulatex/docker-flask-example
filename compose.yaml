@@ -91,6 +91,7 @@ services:
     environment:
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      SERVER_NAME: "${SERVER_NAME}"
 
   worker:
     <<: *default-app
