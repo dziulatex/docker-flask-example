@@ -9,7 +9,6 @@ import traceback
 
 admin = Blueprint('admin', __name__)
 
-
 @admin.route('/dashboard')
 @login_required
 def dashboard():

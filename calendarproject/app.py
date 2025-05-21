@@ -15,7 +15,9 @@ from calendarproject.notifications.views import notifications
 import logging
 from logging.handlers import RotatingFileHandler
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
+load_dotenv(".env.local", override=True)
 
 def setup_logging(app):
     # Create logs directory if it doesn't exist
@@ -123,17 +125,28 @@ def create_admin_if_not_exists(app):
     """
     Create an admin account if it doesn't exist.
     """
+    # Use os.getenv directly with fallbacks
+    admin_username = os.getenv("ADMIN_USERNAME", "admin")
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@example.com")
+    admin_first_name = os.getenv("ADMIN_FIRST_NAME", "Jacek")
+    admin_last_name = os.getenv("ADMIN_LAST_NAME", "Jeleń")
+    admin_password = os.getenv("ADMIN_PASSWORD")
+
+    if not admin_password:
+        print("Warning: ADMIN_PASSWORD environment variable is not set!")
+        admin_password = "change_me_immediately"  # Default fallback
+
     with app.app_context():
         admin = User.query.filter_by(is_admin=True).first()
         if not admin:
             new_admin = User(
-                username="admin",
-                email="admin@example.com",
-                first_name="Jacek",  # Dodane imię
-                last_name="Jeleń",  # Dodane nazwisko
+                username=admin_username,
+                email=admin_email,
+                first_name=admin_first_name,
+                last_name=admin_last_name,
                 is_admin=True
             )
-            new_admin.set_password("password")  # W środowisku produkcyjnym należy użyć bezpieczniejszego hasła
+            new_admin.set_password(admin_password)
             db.session.add(new_admin)
             db.session.commit()
             print("Konto admina zostało utworzone.")

@@ -92,7 +92,7 @@ ci-test: lint-dockerfile
 	docker-compose build
 	docker-compose up -d
 	$(eval include .env)
-	wait-until "docker-compose exec -T -e PGPASSWORD=$(POSTGRES_PASSWORD) postgres psql -U $(POSTGRES_USER) $(POSTGRES_USER) -c 'SELECT 1'"
+	wait-until "docker-compose exec -T -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) postgres psql -U $(POSTGRES_USER) $(POSTGRES_USER) -c 'SELECT 1'"
 	docker-compose logs
 	$(MAKE) lint format-imports format test
 
