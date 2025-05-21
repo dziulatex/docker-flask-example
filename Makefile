@@ -9,9 +9,9 @@ DC ?= exec
 # TTY setting for CI
 TTY := $(if $(shell tty -s || echo no),,"-T")
 
-# Helper function to run docker-compose
+# Helper function to run docker compose
 define dc
-	docker-compose $(DC) $(TTY) $(1)
+	docker compose $(DC) $(TTY) $(1)
 endef
 
 .PHONY: all cmd flask lint lint-dockerfile format format-imports quality test test-coverage shell psql redis-cli pip-install pip-outdated yarn-install yarn-outdated yarn-build-js yarn-build-css clean ci-install-deps ci-test help
@@ -55,18 +55,18 @@ redis-cli:
 	$(call dc,redis redis-cli $(filter-out $@,$(MAKECMDGOALS)))
 
 pip-install:
-	docker-compose build
-	docker-compose run $(TTY) web bin/pip3-install
-	docker-compose down
-	docker-compose up -d
+	docker compose build
+	docker compose run $(TTY) web bin/pip3-install
+	docker compose down
+	docker compose up -d
 
 pip-outdated:
 	$(call dc,web pip3 list --outdated)
 
 yarn-install:
-	docker-compose build
-	docker-compose run $(TTY) js yarn install
-	docker-compose down
+	docker compose build
+	docker compose run $(TTY) js yarn install
+	docker compose down
 
 yarn-outdated:
 	$(call dc,js yarn outdated)
@@ -89,11 +89,11 @@ ci-install-deps:
 
 ci-test: lint-dockerfile
 	cp --no-clobber .env.example .env
-	docker-compose build
-	docker-compose up -d
+	docker compose build
+	docker compose up -d
 	$(eval include .env)
-	wait-until "docker-compose exec -T -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) postgres psql -U $(POSTGRES_USER) $(POSTGRES_USER) -c 'SELECT 1'"
-	docker-compose logs
+	wait-until "docker compose exec -T -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) postgres psql -U $(POSTGRES_USER) $(POSTGRES_USER) -c 'SELECT 1'"
+	docker compose logs
 	$(MAKE) lint format-imports format test
 
 # New command to add a package and update requirements.txt
