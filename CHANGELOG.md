@@ -97,7 +97,7 @@ Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Adjust `x-assets` to use a `stop_grace_period` of `0` for faster CTRL+c times in dev
-- Reference `PORT` variable in the `docker-compose.yml` web service instead of hard coding `8000`
+- Reference `PORT` variable in the `docker-compose.yml` web service instead of hard coding `80`
 - Adjust Hadolint to exit > 0 if any style warnings are present
 - Rename `esbuild.config.js` to `esbuild.config.mjs` and refactor config for esbuild 0.17+
 - In `calendarproject/up/views.py`, update raw SQL `SELECT 1` health check for SQLAlchemy 2.0
